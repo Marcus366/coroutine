@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "../src/coroutine.h"
 
 
 void* foo(void *arg) {
     coroutine_t cid = (long)arg;
     coroutine_resume((cid % 2) + 1);
+
+    read(0, 0, 0);
 
     return NULL;
 }

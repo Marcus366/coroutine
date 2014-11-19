@@ -5,5 +5,5 @@ CFLAGS =-Wall -g -fsplit-stack
 
 
 test/main: test/main.c
-	$(CC) src/coroutine.c test/main.c -I../src $(CFLAGS) -o test/main
+	$(CC) src/coroutine.c src/hook.c test/main.c -I../src $(CFLAGS) -o test/main
 	test/main
