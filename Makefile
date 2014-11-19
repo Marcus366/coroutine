@@ -3,7 +3,12 @@ CFLAGS =-Wall -g -fsplit-stack
 
 .PHONY: all libco test
 
+all: libco test
 
-test/main: test/main.c
-	$(CC) src/coroutine.c src/hook.c test/main.c -I../src $(CFLAGS) -o test/main
-	test/main
+libco:
+	mkdir -p objs/src
+	(cd src && make)
+
+test:
+	mkdir -p objs/test
+	(cd test && make)
