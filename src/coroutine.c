@@ -1,7 +1,9 @@
 #include "coroutine.h"
+#include "bitset.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
+#include <stdint.h>
 #include <sys/mman.h>
 
 
@@ -10,6 +12,10 @@ typedef struct {
     ucontext_t ctx;
 } coroutine_ctx_t;
 
+
+
+
+static cid_map_t *g_cid_map;
 
 coroutine_t      g_coroutine_running;
 coroutine_ctx_t *g_coroutine_map[1024];
@@ -107,3 +113,4 @@ coroutine_equal(coroutine_t lhs, coroutine_t rhs)
 {
     return lhs == rhs;
 }
+
