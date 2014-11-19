@@ -4,8 +4,7 @@
 
 
 void* foo(void *arg) {
-    long cid = (long)arg;
-    printf("coroutine %ld running\n", cid);
+    coroutine_t cid = (long)arg;
     coroutine_resume((cid % 2) + 1);
 
     return NULL;

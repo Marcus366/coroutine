@@ -14,4 +14,7 @@ void coroutine_yield();
 coroutine_t coroutine_self();
 
 
+int coroutine_equal(coroutine_t lhs, coroutine_t rhs);
+
+
 #endif

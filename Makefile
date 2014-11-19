@@ -1,5 +1,5 @@
 CC =gcc
-CFALGS =-Wall -g
+CFLAGS =-Wall -g -fsplit-stack
 
 .PHONY: all libco test
 

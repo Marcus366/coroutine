@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
+#include <sys/mman.h>
 
 
 typedef struct {
-    ucontext_t ctx;
     u_char    *stk;
+    ucontext_t ctx;
 } coroutine_ctx_t;
 
 
@@ -45,11 +46,12 @@ int coroutine_create(coroutine_t *cidp, const void *attr,
     for (i = 1; i < 1024; ++i) {
         if (g_coroutine_map[i] == NULL) {
             g_coroutine_map[i] = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
-            g_coroutine_map[i]->stk = (u_char*)malloc(8196);
+            g_coroutine_map[i]->stk = (u_char*)mmap(NULL, 8192,
+                PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
             getcontext(&g_coroutine_map[i]->ctx);
             g_coroutine_map[i]->ctx.uc_stack.ss_sp = g_coroutine_map[i]->stk;
-            g_coroutine_map[i]->ctx.uc_stack.ss_size = 8196;
+            g_coroutine_map[i]->ctx.uc_stack.ss_size = 8192;
             g_coroutine_map[i]->ctx.uc_link = &g_coroutine_map[0]->ctx;
             makecontext(&g_coroutine_map[i]->ctx, (void(*)())start_rtn, 1, arg);
 
@@ -77,9 +79,31 @@ coroutine_resume(coroutine_t cid)
 }
 
 
+void
+coroutine_yield()
+{
+    int i;
+    coroutine_t cid = coroutine_self();
+
+    for (i = 0; i < 1024; ++i) {
+        if (cid == i) continue;
+        if (coroutine_get_ctx(i) != NULL) {
+            coroutine_resume(i);
+            break;
+        }
+    }
+}
+
+
 coroutine_t
 coroutine_self()
 {
     return g_coroutine_running;
 }
 
+
+int
+coroutine_equal(coroutine_t lhs, coroutine_t rhs)
+{
+    return lhs == rhs;
+}
