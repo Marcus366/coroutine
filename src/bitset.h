@@ -15,13 +15,13 @@ typedef unsigned long long ull;
     (!!((name[k / ull_bits]) & (1 << (k % ull_bits))))
 
 
-#define BITSET_SETBIT(name, k, val)                         \
-    do {                                                    \
-        if (val) {                                          \
-            name[k / ull_bits] |= (1 << (k % ull_bits));    \
-        } else {                                            \
-            name[k / ull_bits] &= (~(1 << (k % ull_bits))); \
-        }                                                   \
+#define BITSET_SETBIT(name, k, val)                             \
+    do {                                                        \
+        if (val) {                                              \
+            name[k / ull_bits] |= (1ull << (k % ull_bits));     \
+        } else {                                                \
+            name[k / ull_bits] &= (~(1ull << (k % ull_bits)));  \
+        }                                                       \
     } while (0)
 
 #endif
