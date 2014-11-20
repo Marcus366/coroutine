@@ -7,10 +7,12 @@ ARFLAGS =rcs
 BUILD_PATH = ../objs/src
 
 SRCS = coroutine.c										\
-			 hook.c
+			 hook.c													\
+			 cidmap.c
 
 OBJS = $(BUILD_PATH)/coroutine.o			\
-			 $(BUILD_PATH)/hook.o
+			 $(BUILD_PATH)/hook.o						\
+			 $(BUILD_PATH)/cidmap.o
 
 
 $(BUILD_PATH)/%.o: %.c

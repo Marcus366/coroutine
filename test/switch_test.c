@@ -3,12 +3,12 @@
 #include <unistd.h>
 #include "../src/coroutine.h"
 
+coroutine_t c[100];
+
 
 void* foo(void *arg) {
     coroutine_t cid = (long)arg;
-    coroutine_resume((cid % 2) + 1);
-
-    read(0, 0, 0);
+    coroutine_resume((cid + 1) % 100);
 
     return NULL;
 }
@@ -16,10 +16,13 @@ void* foo(void *arg) {
 
 int main()
 {
-    coroutine_t c1, c2;
-    coroutine_create(&c1, NULL, foo, (void*)1);
-    coroutine_create(&c2, NULL, foo, (void*)2);
-    coroutine_resume(c1);
+    long i;
+    printf("switch_test begin\n");
+    for (i = 0; i < 100; ++i) {
+        coroutine_create(&c[i], NULL, foo, (void*)i);
+    }
+    coroutine_resume(c[0]);
+    printf("switch_test end\n");
 
     return 0;
 }

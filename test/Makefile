@@ -8,5 +8,5 @@ LIBCOROUTINE =-L../objs/src/ -lcoroutine -ldl
 all: ../objs/test/switch_test
 	../objs/test/switch_test
 
-../objs/test/switch_test: switch_test.c 
+../objs/test/switch_test: switch_test.c ../objs/src/libcoroutine.a
 	$(CC) $< -o $@ $(LIBCOROUTINE)
