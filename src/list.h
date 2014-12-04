@@ -3,6 +3,16 @@
 
 #include <sys/types.h>
 
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE*)0)->MEMBER)
+#endif
+
+#ifndef container_of
+#define container_of(ptr, type, member) ({  \
+    const typeof( ((type*)0)->member) *__mptr = (ptr); \
+    (type*)((char*)__mptr - offsetof(type, member)); })
+#endif
+
 /*
  * Simple doubly linked list implementation.
  *
@@ -585,7 +595,7 @@ struct hlist_head {
 };
 
 struct hlist_node {
-  struct hlistnode *next, **prev;
+  struct hlist_node *next, **pprev;
 };
 
 #define HLIST_HEAD_INIT { .first = NULL }

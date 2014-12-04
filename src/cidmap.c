@@ -11,7 +11,8 @@ coroutine_init_cidmap()
 {
     assert(g_cidmap_head == NULL);
 
-    /* TODO:
+    /*
+     * TODO:
      * A test for whether malloc of mmap is faster.
      */
     g_cidmap_head = (cidmap_t*)calloc(1, sizeof(cidmap_t));
@@ -51,9 +52,12 @@ coroutine_get_free_cid()
         }
     }
 
+    /* Create a new map for cid. */
     cidmap->next = (cidmap_t*)calloc(1, sizeof(cidmap_t));
     cidmap = cidmap->next;
+    cidmap->used = 1;
     BITSET_SETBIT(cidmap->map, 0, 1);
 
     return ret;
 }
+

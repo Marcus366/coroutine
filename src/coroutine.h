@@ -18,3 +18,4 @@ int coroutine_equal(coroutine_t lhs, coroutine_t rhs);
 
 
 #endif
+
