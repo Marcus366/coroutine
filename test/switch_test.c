@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "../src/coroutine.h"
 
-#define COROUTINE_SIZE 1000
+#define COROUTINE_SIZE 10000
 coroutine_t c[COROUTINE_SIZE];
 
 
