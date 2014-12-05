@@ -10,9 +10,7 @@
 #include "coroutine.h"
 
 
-
 int              g_init;
-
 coroutine_t      g_coroutine_running;
 
 

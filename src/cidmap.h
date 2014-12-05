@@ -24,6 +24,7 @@ void coroutine_init_cidmap();
 
 
 coroutine_t coroutine_get_free_cid();
+void        coroutine_erase_cid(coroutine_t cid);
 
 
 #endif

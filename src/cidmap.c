@@ -61,3 +61,18 @@ coroutine_get_free_cid()
     return ret;
 }
 
+
+void
+coroutine_earse_cid(coroutine_t cid)
+{
+    cidmap_t *map;
+
+    map = g_cidmap_head;
+    while (cid > bits_per_map) {
+        cid -= bits_per_map;
+        map = map->next;
+    }
+
+    BITSET_SETBIT(map->map, cid, 0);
+}
+
