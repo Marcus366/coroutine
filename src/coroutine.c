@@ -74,7 +74,7 @@ coroutine_create(coroutine_t *cidp, const void *attr,
     makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
     coroutine_set_ctx(cid, ctx);
-    printf("make coroutine cid: %d\n", cid);
+    printf("make coroutine cid: %ld\n", cid);
 
     *cidp = cid;
 
@@ -89,8 +89,10 @@ coroutine_resume(coroutine_t cid)
     coroutine_ctx_t *prev_ctx = coroutine_get_ctx(prev);
     coroutine_ctx_t *next_ctx = coroutine_get_ctx(cid);
 
+    prev_ctx->flag = READY;
+    next_ctx->flag = RUNNING;
     g_coroutine_running = cid;
-    printf("resume coroutine cid: %d\n", cid);
+    printf("resume coroutine cid: %ld\n", cid);
     swapcontext(&prev_ctx->ctx, &next_ctx->ctx);
 }
 
@@ -98,16 +100,14 @@ coroutine_resume(coroutine_t cid)
 void
 coroutine_yield()
 {
-    int i;
-    coroutine_t cid = coroutine_self();
-
-    for (i = 0; i < 1024; ++i) {
-        if (cid == i) continue;
-        if (coroutine_get_ctx(i) != NULL) {
-            coroutine_resume(i);
-            break;
-        }
+    coroutine_t cid;
+    
+    cid = coroutine_sched(SCHED_NOWAIT);
+    if (cid == -1) {
+        cid = coroutine_sched(SCHED_BLOCK);
     }
+
+    coroutine_resume(cid);
 }
 
 

@@ -12,6 +12,7 @@
 #define BLOCKING   2
 
 
+typedef struct list_head list_head;
 typedef struct hlist_head hlist_head;
 typedef struct hlist_node hlist_node;
 typedef struct {
@@ -19,12 +20,14 @@ typedef struct {
     u_char      *stk;
     ucontext_t   ctx;
     hlist_node   hash;
+    list_head    list;
 
     uint32_t     flag;
 } coroutine_ctx_t;
 
 
 extern hlist_head g_coroutine_map[1024];
+extern list_head  g_coroutine_list;
 
 
 coroutine_ctx_t* coroutine_get_ctx(coroutine_t cid);

@@ -4,6 +4,7 @@
 
 
 hlist_head g_coroutine_map[1024];
+list_head  g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
 
 
 static int
@@ -38,5 +39,7 @@ coroutine_set_ctx(coroutine_t cid, coroutine_ctx_t *ctx)
     ctx->cid = cid;
     index = hash_int(cid);
     hlist_add_head(&ctx->hash, &g_coroutine_map[index]);
+
+    list_add(&ctx->list, &g_coroutine_list);
 }
 
