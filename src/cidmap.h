@@ -20,7 +20,7 @@ typedef struct cidmap {
 } cidmap_t;
 
 
-void coroutine_init_cidmap();
+void coroutine_cidmap_init();
 
 
 coroutine_t coroutine_get_free_cid();

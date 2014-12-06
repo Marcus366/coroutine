@@ -7,7 +7,7 @@
 static cidmap_t *g_cidmap_head;
 
 void
-coroutine_init_cidmap()
+coroutine_cidmap_init()
 {
     assert(g_cidmap_head == NULL);
 

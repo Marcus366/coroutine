@@ -10,8 +10,9 @@ coroutine_t c[COROUTINE_SIZE];
 void* foo(void *arg) {
     int i;
     coroutine_t cid = (long)arg;
+    (void) cid;
     for (i = 0; i < 10; ++i) {
-        coroutine_resume((cid + 5) % COROUTINE_SIZE);
+        coroutine_yield();
     }
 
     return NULL;

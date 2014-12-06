@@ -12,6 +12,7 @@ typedef struct fdstat {
 } fdstat_t;
 
 
+extern coroutine_t g_exit_coroutine;
 extern fdstat_t *fds;
 
 

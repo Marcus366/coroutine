@@ -26,11 +26,10 @@ coroutine_init()
         INIT_HLIST_HEAD(&g_coroutine_map[i]);
     }
 
+    coroutine_cidmap_init();
     coroutine_sched_init();
 
-    coroutine_init_cidmap();
     cid = coroutine_get_free_cid();
-
     main_ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
     main_ctx->flag = RUNNING;
     getcontext(&main_ctx->ctx);
@@ -43,7 +42,7 @@ coroutine_create(coroutine_t *cidp, const void *attr,
     void*(*start_rtn)(void*), void *arg)
 {
     coroutine_t cid;
-    coroutine_ctx_t *mainctx, *ctx;
+    coroutine_ctx_t *exitctx, *ctx;
 
     /* TODO:
      * corutine attribute.
@@ -60,20 +59,21 @@ coroutine_create(coroutine_t *cidp, const void *attr,
     }
 
     ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
-    ctx->cid = cid;
+    coroutine_set_ctx(cid, ctx);
+
+    ctx->cid  = cid;
     ctx->flag = READY;
-    ctx->stk = (u_char*)mmap(NULL, 8192,
+    ctx->stk  = (u_char*)mmap(NULL, 8192,
           PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
-    mainctx = coroutine_get_ctx(0);
+    exitctx = coroutine_get_ctx(g_exit_coroutine);
 
     getcontext(&ctx->ctx);
     ctx->ctx.uc_stack.ss_sp = ctx->stk;
     ctx->ctx.uc_stack.ss_size = 8192;
-    ctx->ctx.uc_link = &mainctx->ctx;
+    ctx->ctx.uc_link = &exitctx->ctx;
     makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
-    coroutine_set_ctx(cid, ctx);
     printf("make coroutine cid: %ld\n", cid);
 
     *cidp = cid;

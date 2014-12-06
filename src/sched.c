@@ -3,20 +3,29 @@
 #include <sys/time.h>
 #include <sys/epoll.h>
 #include <sys/resource.h>
+#include <sys/mman.h>
 
+#include "list.h"
 #include "utils.h"
 #include "sched.h"
 #include "context.h"
 
 
+coroutine_t g_exit_coroutine;
 fdstat_t *g_fds;
 
 static int g_pollfd;
-
+static void* coroutine_exit_sched(void *arg);
 
 int
 coroutine_sched_init() {
     struct rlimit rlim;
+
+    if (coroutine_create(&g_exit_coroutine, NULL,
+        coroutine_exit_sched, NULL) == -1)
+    {
+        return -1;
+    }
 
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
         return -1;
@@ -89,3 +98,27 @@ coroutine_sched(int type)
     return cid;
 }
 
+
+void*
+coroutine_exit_sched(void *arg)
+{
+    coroutine_t cid;
+    coroutine_ctx_t *ctx;
+    for (;;) {
+        /*
+         * Next line will get the last running coroutine id,
+         * NOT the coroutine id of exit_sched.
+         */
+        cid = coroutine_self();
+        ctx = coroutine_get_ctx(cid);
+
+        list_del(&ctx->list);
+        hlist_del(&ctx->hash);
+        munmap(ctx->ctx.uc_stack.ss_sp, ctx->ctx.uc_stack.ss_size);
+        free(ctx);
+
+        coroutine_yield();
+    }
+
+    return NULL;
+}
