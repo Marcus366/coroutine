@@ -71,8 +71,24 @@ coroutine_sched_unregfd(int fd)
 }
 
 
-coroutine_t
-coroutine_sched(int type)
+void
+coroutine_sched_block(coroutine_ctx_t *ctx, int fd, int type)
+{
+    struct epoll_event ev;
+
+    ctx->flag = BLOCKING;
+
+    ev.events = type;
+    ev.data.ptr = ctx;
+
+    epoll_ctl(g_pollfd, EPOLL_CTL_ADD, fd, &ev);
+
+    coroutine_sched();
+}
+
+
+void
+coroutine_sched()
 {
     int i, nfds;
     coroutine_t cid;
@@ -80,7 +96,18 @@ coroutine_sched(int type)
     struct epoll_event event[1024];
 
     cid = -1;
-    nfds = epoll_wait(g_pollfd, event, 1024, type);
+    nfds = epoll_wait(g_pollfd, event, 1024, 0);
+    for (i = 0; i < nfds; ++i) {
+        ctx = (coroutine_ctx_t*)event[i].data.ptr;
+        ctx->flag = READY;
+        cid = ctx->cid;
+    }
+
+    if (cid != -1) {
+        coroutine_resume(cid);
+    }
+
+    nfds = epoll_wait(g_pollfd, event, 1024, -1);
     for (i = 0; i < nfds; ++i) {
         ctx = (coroutine_ctx_t*)event[i].data.ptr;
         ctx->flag = READY;
@@ -94,8 +121,9 @@ coroutine_sched(int type)
         }
     }
 
+    coroutine_resume(cid);
 
-    return cid;
+    return;
 }
 
 
@@ -122,3 +150,4 @@ coroutine_exit_sched(void *arg)
 
     return NULL;
 }
+

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <dlfcn.h>
 #include <sys/types.h>
+#include <sys/epoll.h>
+#include <errno.h>
 
 #include "utils.h"
 #include "sched.h"
@@ -81,22 +83,64 @@ open(const char *pathname, int flags, mode_t mode)
 ssize_t
 read(int fd, void *buf, size_t count)
 {
+    ssize_t n, bytes;
     hook_sys_call(read);
-
     printf("hook read\n");
 
-    return g_read_ptr(fd, buf, count);
+    if (is_nonblocking(fd)) {
+        return g_read_ptr(fd, buf, count);
+    }
+
+    bytes = 0;
+    for (;;) {
+        if ((n = g_read_ptr(fd, ((char*)buf) + bytes, count - bytes)) == -1) {
+            if (errno == EINTR) {
+                continue;
+            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+                    fd, EPOLLIN);
+                continue;
+            } else {
+                bytes = -1;
+                break;
+            }
+        }
+        bytes += n;
+    }
+
+    return bytes;
 }
 
 
 ssize_t
 write(int fd, const void *buf, size_t count)
 {
+    ssize_t n, bytes;
     hook_sys_call(write);
-
     printf("hook write\n");
 
-    return g_write_ptr(fd, buf, count);
+    if (is_nonblocking(fd)) {
+        return g_write_ptr(fd, buf, count);
+    }
+
+    bytes = 0;
+    for (;;) {
+        if ((n = g_write_ptr(fd, ((char*)buf) + bytes, count - bytes)) == -1) {
+            if (errno == EINTR) {
+                continue;
+            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+                    fd, EPOLLOUT);
+                continue;
+            } else {
+                bytes = -1;
+                break;
+            }
+        }
+        bytes += n;
+    }
+
+    return bytes;
 }
 
 

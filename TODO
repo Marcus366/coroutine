@@ -1,4 +1,5 @@
 FIXME:
-1. Crash if resume unexisted coroutine
+1. Crash if resume unexisted coroutine.
 
 TODO:
+1. coroutine_yield should not run himself expect no more coroutine exist.

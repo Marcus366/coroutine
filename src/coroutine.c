@@ -100,14 +100,7 @@ coroutine_resume(coroutine_t cid)
 void
 coroutine_yield()
 {
-    coroutine_t cid;
-    
-    cid = coroutine_sched(SCHED_NOWAIT);
-    if (cid == -1) {
-        cid = coroutine_sched(SCHED_BLOCK);
-    }
-
-    coroutine_resume(cid);
+    coroutine_sched();
 }
 
 

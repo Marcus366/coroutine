@@ -1,6 +1,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "utils.h"
+#include "sched.h"
+
 
 int
 set_nonblocking(int fd)
@@ -16,6 +18,13 @@ set_nonblocking(int fd)
     }
 
     return 0;
+}
+
+
+int
+is_nonblocking(int fd)
+{
+    return g_fds[fd].fl & O_NONBLOCK;
 }
 
 
@@ -36,3 +45,10 @@ setfl(int fd, int fl)
     return 0;
 }
 
+int
+is_eagain(ssize_t errno)
+{
+    return errno == EAGAIN;
+}
+int is_ewouldblock(ssize_t errno);
+int is_eintr(ssize_t errno);
