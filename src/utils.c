@@ -45,10 +45,3 @@ setfl(int fd, int fl)
     return 0;
 }
 
-int
-is_eagain(ssize_t errno)
-{
-    return errno == EAGAIN;
-}
-int is_ewouldblock(ssize_t errno);
-int is_eintr(ssize_t errno);

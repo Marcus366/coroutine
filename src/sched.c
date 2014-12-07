@@ -100,7 +100,13 @@ coroutine_sched()
     for (i = 0; i < nfds; ++i) {
         ctx = (coroutine_ctx_t*)event[i].data.ptr;
         ctx->flag = READY;
-        cid = ctx->cid;
+    }
+
+    list_for_each_entry(ctx, &g_coroutine_list, list) {
+        if (ctx->flag == READY && ctx->cid != coroutine_self()) {
+            cid = ctx->cid;
+            break;
+        }
     }
 
     if (cid != -1) {
@@ -112,13 +118,6 @@ coroutine_sched()
         ctx = (coroutine_ctx_t*)event[i].data.ptr;
         ctx->flag = READY;
         cid = ctx->cid;
-    }
-
-    list_for_each_entry(ctx, &g_coroutine_list, list) {
-        if (ctx->flag == READY && ctx->cid != coroutine_self()) {
-            cid = ctx->cid;
-            break;
-        }
     }
 
     coroutine_resume(cid);
