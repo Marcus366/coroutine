@@ -16,13 +16,13 @@ typedef struct list_head list_head;
 typedef struct hlist_head hlist_head;
 typedef struct hlist_node hlist_node;
 typedef struct {
-    coroutine_t  cid;
-    u_char      *stk;
-    ucontext_t   ctx;
-    hlist_node   hash;
-    list_head    list;
+  coroutine_t  cid;
+  u_char      *stk;
+  ucontext_t   ctx;
+  hlist_node   hash;
+  list_head    list;
 
-    uint32_t     flag;
+  uint32_t     flag;
 } coroutine_ctx_t;
 
 

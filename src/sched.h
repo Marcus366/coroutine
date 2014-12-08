@@ -7,8 +7,8 @@
 
 
 typedef struct fdstat {
-    unsigned open : 1;
-    int fl;
+  unsigned open : 1;
+  int fl;
 } fdstat_t;
 
 

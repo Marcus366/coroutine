@@ -10,36 +10,36 @@ list_head  g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
 static int
 hash_int(int val)
 {
-    return val % 1024;
+  return val % 1024;
 }
 
 
 coroutine_ctx_t*
 coroutine_get_ctx(coroutine_t cid)
 {
-    int index;
-    coroutine_ctx_t *ctx;
+  int index;
+  coroutine_ctx_t *ctx;
 
-    ctx = NULL;
-    index = hash_int(cid);
-    hlist_for_each_entry(ctx, &g_coroutine_map[index], hash) {
-        if (ctx->cid == cid) {
-            break;
-        }
+  ctx = NULL;
+  index = hash_int(cid);
+  hlist_for_each_entry(ctx, &g_coroutine_map[index], hash) {
+    if (ctx->cid == cid) {
+      break;
     }
-    return ctx;
+  }
+  return ctx;
 }
 
 
 void
 coroutine_set_ctx(coroutine_t cid, coroutine_ctx_t *ctx)
 {
-    int index;
+  int index;
 
-    ctx->cid = cid;
-    index = hash_int(cid);
-    hlist_add_head(&ctx->hash, &g_coroutine_map[index]);
+  ctx->cid = cid;
+  index = hash_int(cid);
+  hlist_add_head(&ctx->hash, &g_coroutine_map[index]);
 
-    list_add(&ctx->list, &g_coroutine_list);
+  list_add(&ctx->list, &g_coroutine_list);
 }
 
