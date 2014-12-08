@@ -8,24 +8,24 @@ coroutine_t c[COROUTINE_SIZE];
 
 
 void* foo(void *arg) {
-    int i;
-    coroutine_t cid = (long)arg;
-    (void) cid;
-    for (i = 0; i < 10; ++i) {
-        coroutine_yield();
-    }
+  int i;
+  coroutine_t cid = (long)arg;
+  (void) cid;
+  for (i = 0; i < 10; ++i) {
+    coroutine_yield();
+  }
 
-    return NULL;
+  return NULL;
 }
 
 
 int main()
 {
-    long i;
-    for (i = 0; i < COROUTINE_SIZE; ++i) {
-        coroutine_create(&c[i], NULL, foo, (void*)i);
-    }
-    coroutine_resume(c[0]);
+  long i;
+  for (i = 0; i < COROUTINE_SIZE; ++i) {
+    coroutine_create(&c[i], NULL, foo, (void*)i);
+  }
+  coroutine_resume(c[0]);
 
-    return 0;
+  return 0;
 }
