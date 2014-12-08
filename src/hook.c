@@ -80,6 +80,48 @@ open(const char *pathname, int flags, mode_t mode)
 }
 
 
+int
+creat(const char *pathname, mode_t mode)
+{
+    int fd;
+    hook_sys_call(creat);
+
+    fd = g_creat_ptr(pathname, mode);
+
+    if (fd == -1) {
+        return -1;
+    }
+
+    if (coroutine_sched_regfd(fd) == -1) {
+        close(fd);
+        return -1;
+    }
+
+    return fd;
+}
+
+
+int
+socket(int domain, int type, int protocol)
+  {
+    int fd;
+    hook_sys_call(socket);
+
+    fd = g_socket_ptr(domain, type, protocol);
+
+    if (fd == -1) {
+        return -1;
+    }
+
+    if (coroutine_sched_regfd(fd) == -1) {
+        close(fd);
+        return -1;
+    }
+
+    return fd;
+}
+
+
 ssize_t
 read(int fd, void *buf, size_t count)
 {
@@ -155,8 +197,38 @@ write(int fd, const void *buf, size_t count)
 ssize_t
 recv(int socket, void *buf, size_t len, int flags)
 {
+    ssize_t n, bytes;
     hook_sys_call(recv);
+    printf("hook recv\n");
 
+    if (is_nonblocking(socket)) {
+        return g_recv_ptr(socket, buf, len, flags);
+    }
+
+    bytes = 0;
+    for (;;) {
+        if ((n = g_recv_ptr(socket, ((char*)buf) + bytes,
+                len - bytes, flags)) == -1)
+        {
+            if (errno == EINTR) {
+                continue;
+            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+                    socket, EPOLLIN);
+                continue;
+            } else {
+                bytes = -1;
+                break;
+            }
+        }
+        bytes += n;
+
+        if (n == 0 || bytes == (ssize_t)len) {
+            break;
+        }
+    }
+
+    return bytes;
     printf("hook recv\n");
 
     return g_recv_ptr(socket, buf, len, flags);
@@ -166,10 +238,37 @@ recv(int socket, void *buf, size_t len, int flags)
 ssize_t
 send(int socket, void *buf, size_t len, int flags)
 {
+    ssize_t n, bytes;
     hook_sys_call(send);
-
     printf("hook send\n");
 
-    return g_send_ptr(socket, buf, len, flags);
+    if (is_nonblocking(socket)) {
+        return g_send_ptr(socket, buf, len, flags);
+    }
+
+    bytes = 0;
+    for (;;) {
+        if ((n = g_send_ptr(socket, ((char*)buf) + bytes,
+                len - bytes, flags)) == -1)
+        {
+            if (errno == EINTR) {
+                continue;
+            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+                    socket, EPOLLOUT);
+                continue;
+            } else {
+                bytes = -1;
+                break;
+            }
+        }
+        bytes += n;
+
+        if (bytes == (ssize_t)len) {
+            break;
+        }
+    }
+
+    return bytes;
 }
 

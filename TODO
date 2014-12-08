@@ -3,3 +3,4 @@ FIXME:
 
 TODO:
 1. coroutine_yield should not run himself expect no more coroutine exist.
+2. coroutine_attribute.
