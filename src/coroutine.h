@@ -9,7 +9,7 @@ extern int          g_init;
 extern coroutine_t  g_coroutine_running;
 
 
-int coroutine_init();
+void coroutine_init();
 
 
 /**

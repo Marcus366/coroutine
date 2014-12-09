@@ -25,8 +25,7 @@ coroutine_init()
   for (i = 0; i < 1024; ++i) {
     INIT_HLIST_HEAD(&g_coroutine_map[i]);
   }
-
-  coroutine_cidmap_init();
+coroutine_cidmap_init();
   coroutine_sched_init();
 
   cid = coroutine_get_free_cid();
@@ -63,18 +62,18 @@ coroutine_create(coroutine_t *cidp, const void *attr,
 
   ctx->cid  = cid;
   ctx->flag = READY;
-  ctx->stk  = (u_char*)mmap(NULL, 8192,
+  ctx->stk  = (u_char*)mmap(NULL, 8192000,
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
   exitctx = coroutine_get_ctx(g_exit_coroutine);
 
   getcontext(&ctx->ctx);
   ctx->ctx.uc_stack.ss_sp = ctx->stk;
-  ctx->ctx.uc_stack.ss_size = 8192;
+  ctx->ctx.uc_stack.ss_size = 8192000;
   ctx->ctx.uc_link = &exitctx->ctx;
   makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
-  printf("make coroutine cid: %ld\n", cid);
+  //printf("make coroutine cid: %ld\n", cid);
 
   *cidp = cid;
 
@@ -92,7 +91,7 @@ coroutine_resume(coroutine_t cid)
   prev_ctx->flag = READY;
   next_ctx->flag = RUNNING;
   g_coroutine_running = cid;
-  printf("resume coroutine cid: %ld\n", cid);
+  //printf("resume coroutine cid: %ld\n", cid);
   swapcontext(&prev_ctx->ctx, &next_ctx->ctx);
 }
 

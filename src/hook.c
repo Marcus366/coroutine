@@ -165,7 +165,7 @@ loop:
 /*
  * If the fd state has been set nonblock by user, we have no need to hook it.
  *
- * Otherwise, we use nonblocking read as blocking read and if the read would
+ * Otherwise, we use nonblocking read instead of blocking read and if the read would
  * block the process, we should schedule this coroutine.
  */
 ssize_t
@@ -173,7 +173,7 @@ read(int fd, void *buf, size_t count)
 {
   ssize_t n, bytes;
   hook_sys_call(read);
-  printf("hook read\n");
+  //printf("hook read\n");
 
   if (is_nonblocking(fd)) {
     return g_read_ptr(fd, buf, count);
@@ -212,7 +212,7 @@ write(int fd, const void *buf, size_t count)
 {
   ssize_t n, bytes;
   hook_sys_call(write);
-  printf("hook write\n");
+  //printf("hook write\n");
 
   if (is_nonblocking(fd)) {
     return g_write_ptr(fd, buf, count);
@@ -248,7 +248,7 @@ recv(int socket, void *buf, size_t len, int flags)
 {
   ssize_t n, bytes;
   hook_sys_call(recv);
-  printf("hook recv\n");
+  //printf("hook recv\n");
 
   if (is_nonblocking(socket)) {
     return g_recv_ptr(socket, buf, len, flags);
@@ -278,7 +278,7 @@ recv(int socket, void *buf, size_t len, int flags)
   }
 
   return bytes;
-  printf("hook recv\n");
+  //printf("hook recv\n");
 
   return g_recv_ptr(socket, buf, len, flags);
 }
@@ -289,7 +289,7 @@ send(int socket, void *buf, size_t len, int flags)
 {
   ssize_t n, bytes;
   hook_sys_call(send);
-  printf("hook send\n");
+  //printf("hook send\n");
 
   if (is_nonblocking(socket)) {
     return g_send_ptr(socket, buf, len, flags);

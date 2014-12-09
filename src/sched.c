@@ -103,7 +103,7 @@ coroutine_sched()
   }
 
   list_for_each_entry(ctx, &g_coroutine_list, list) {
-    if (ctx->flag == READY && ctx->cid != coroutine_self()) {
+    if (ctx->flag == READY && ctx->cid != 1 && ctx->cid != coroutine_self()) {
       cid = ctx->cid;
       break;
     }
