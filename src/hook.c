@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <dlfcn.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/epoll.h>
 #include <errno.h>
@@ -33,6 +32,8 @@ g_##name##_ptr_t g_##name##_ptr = NULL
     }                                                   \
   } while (0)
 
+
+typedef  __socklen_t socklen_t;
 
 syscall1(close, int, int);
 

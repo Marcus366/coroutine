@@ -1,6 +1,6 @@
 .PHONY: all libco test
 
-all: libco test
+all: libco test sample
 
 libco:
 	mkdir -p objs/src
@@ -8,4 +8,8 @@ libco:
 
 test: libco
 	mkdir -p objs/test
-	(cd test && make)
+	(cd t && make)
+
+sample: libco
+	mkdir -p objs/sample
+	(cd sample && make)
