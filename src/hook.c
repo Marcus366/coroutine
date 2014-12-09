@@ -8,29 +8,29 @@
 #include "sched.h"
 
 #define syscall1(name, ret, arg1)                           \
-    typedef ret (*g_##name##_ptr_t)(arg1);                  \
-    g_##name##_ptr_t g_##name##_ptr = NULL
+  typedef ret (*g_##name##_ptr_t)(arg1);                  \
+g_##name##_ptr_t g_##name##_ptr = NULL
 
 #define syscall2(name, ret, arg1, arg2)                     \
-    typedef ret (*g_##name##_ptr_t)(arg1, arg2);            \
-    g_##name##_ptr_t g_##name##_ptr = NULL
+  typedef ret (*g_##name##_ptr_t)(arg1, arg2);            \
+g_##name##_ptr_t g_##name##_ptr = NULL
 
 #define syscall3(name, ret, arg1, arg2, arg3)               \
-    typedef ret (*g_##name##_ptr_t)(arg1, arg2, arg3);      \
-    g_##name##_ptr_t g_##name##_ptr = NULL
+  typedef ret (*g_##name##_ptr_t)(arg1, arg2, arg3);      \
+g_##name##_ptr_t g_##name##_ptr = NULL
 
 #define syscall4(name, ret, arg1, arg2, arg3, arg4)         \
-    typedef ret (*g_##name##_ptr_t)(arg1, arg2, arg3, arg4);\
-    g_##name##_ptr_t g_##name##_ptr = NULL
+  typedef ret (*g_##name##_ptr_t)(arg1, arg2, arg3, arg4);\
+g_##name##_ptr_t g_##name##_ptr = NULL
 
 
 #define hook_sys_call(name)                                 \
-    do {                                                    \
-        if (g_##name##_ptr == NULL) {                       \
-            g_##name##_ptr =                                \
-            (g_##name##_ptr_t)dlsym(RTLD_NEXT, #name);      \
-        }                                                   \
-    } while (0)
+  do {                                                    \
+    if (g_##name##_ptr == NULL) {                       \
+      g_##name##_ptr =                                \
+      (g_##name##_ptr_t)dlsym(RTLD_NEXT, #name);      \
+    }                                                   \
+  } while (0)
 
 
 syscall1(close, int, int);
@@ -48,227 +48,227 @@ syscall4(recv, ssize_t, int, void*, size_t, int);
 syscall4(send, ssize_t, int, const void*, size_t, int);
 
 
-int
+  int
 close(int fd)
 {
-    hook_sys_call(close);
+  hook_sys_call(close);
 
-    coroutine_sched_unregfd(fd);
+  coroutine_sched_unregfd(fd);
 
-    return g_close_ptr(fd);
+  return g_close_ptr(fd);
 }
 
 
-int
+  int
 open(const char *pathname, int flags, mode_t mode)
 {
-    int fd;
-    hook_sys_call(open);
+  int fd;
+  hook_sys_call(open);
 
-    fd = g_open_ptr(pathname, flags, mode);
+  fd = g_open_ptr(pathname, flags, mode);
 
-    if (fd == -1) {
-        return -1;
-    }
+  if (fd == -1) {
+    return -1;
+  }
 
-    if (coroutine_sched_regfd(fd) == -1) {
-        close(fd);
-        return -1;
-    }
+  if (coroutine_sched_regfd(fd) == -1) {
+    close(fd);
+    return -1;
+  }
 
-    return fd;
+  return fd;
 }
 
 
-int
+  int
 creat(const char *pathname, mode_t mode)
 {
-    int fd;
-    hook_sys_call(creat);
+  int fd;
+  hook_sys_call(creat);
 
-    fd = g_creat_ptr(pathname, mode);
+  fd = g_creat_ptr(pathname, mode);
 
-    if (fd == -1) {
-        return -1;
-    }
+  if (fd == -1) {
+    return -1;
+  }
 
-    if (coroutine_sched_regfd(fd) == -1) {
-        close(fd);
-        return -1;
-    }
+  if (coroutine_sched_regfd(fd) == -1) {
+    close(fd);
+    return -1;
+  }
 
-    return fd;
+  return fd;
 }
 
 
-int
+  int
 socket(int domain, int type, int protocol)
-  {
-    int fd;
-    hook_sys_call(socket);
+{
+  int fd;
+  hook_sys_call(socket);
 
-    fd = g_socket_ptr(domain, type, protocol);
+  fd = g_socket_ptr(domain, type, protocol);
 
-    if (fd == -1) {
-        return -1;
-    }
+  if (fd == -1) {
+    return -1;
+  }
 
-    if (coroutine_sched_regfd(fd) == -1) {
-        close(fd);
-        return -1;
-    }
+  if (coroutine_sched_regfd(fd) == -1) {
+    close(fd);
+    return -1;
+  }
 
-    return fd;
+  return fd;
 }
 
 
-ssize_t
+  ssize_t
 read(int fd, void *buf, size_t count)
 {
-    ssize_t n, bytes;
-    hook_sys_call(read);
-    printf("hook read\n");
+  ssize_t n, bytes;
+  hook_sys_call(read);
+  printf("hook read\n");
 
-    if (is_nonblocking(fd)) {
-        return g_read_ptr(fd, buf, count);
+  if (is_nonblocking(fd)) {
+    return g_read_ptr(fd, buf, count);
+  }
+
+  bytes = 0;
+  for (;;) {
+    if ((n = g_read_ptr(fd, ((char*)buf) + bytes, count - bytes)) == -1) {
+      if (errno == EINTR) {
+        continue;
+      } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+            fd, EPOLLIN);
+        continue;
+      } else {
+        bytes = -1;
+        break;
+      }
     }
+    bytes += n;
 
-    bytes = 0;
-    for (;;) {
-        if ((n = g_read_ptr(fd, ((char*)buf) + bytes, count - bytes)) == -1) {
-            if (errno == EINTR) {
-                continue;
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
-                    fd, EPOLLIN);
-                continue;
-            } else {
-                bytes = -1;
-                break;
-            }
-        }
-        bytes += n;
-
-        if (n == 0 || bytes == (ssize_t)count) {
-            break;
-        }
+    if (n == 0 || bytes == (ssize_t)count) {
+      break;
     }
+  }
 
-    return bytes;
+  return bytes;
 }
 
 
-ssize_t
+  ssize_t
 write(int fd, const void *buf, size_t count)
 {
-    ssize_t n, bytes;
-    hook_sys_call(write);
-    printf("hook write\n");
+  ssize_t n, bytes;
+  hook_sys_call(write);
+  printf("hook write\n");
 
-    if (is_nonblocking(fd)) {
-        return g_write_ptr(fd, buf, count);
+  if (is_nonblocking(fd)) {
+    return g_write_ptr(fd, buf, count);
+  }
+
+  bytes = 0;
+  for (;;) {
+    if ((n = g_write_ptr(fd, ((char*)buf) + bytes, count - bytes)) == -1) {
+      if (errno == EINTR) {
+        continue;
+      } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+            fd, EPOLLOUT);
+        continue;
+      } else {
+        bytes = -1;
+        break;
+      }
     }
+    bytes += n;
 
-    bytes = 0;
-    for (;;) {
-        if ((n = g_write_ptr(fd, ((char*)buf) + bytes, count - bytes)) == -1) {
-            if (errno == EINTR) {
-                continue;
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
-                    fd, EPOLLOUT);
-                continue;
-            } else {
-                bytes = -1;
-                break;
-            }
-        }
-        bytes += n;
-
-        if (bytes == (ssize_t)count) {
-            break;
-        }
+    if (bytes == (ssize_t)count) {
+      break;
     }
+  }
 
-    return bytes;
+  return bytes;
 }
 
 
-ssize_t
+  ssize_t
 recv(int socket, void *buf, size_t len, int flags)
 {
-    ssize_t n, bytes;
-    hook_sys_call(recv);
-    printf("hook recv\n");
+  ssize_t n, bytes;
+  hook_sys_call(recv);
+  printf("hook recv\n");
 
-    if (is_nonblocking(socket)) {
-        return g_recv_ptr(socket, buf, len, flags);
-    }
-
-    bytes = 0;
-    for (;;) {
-        if ((n = g_recv_ptr(socket, ((char*)buf) + bytes,
-                len - bytes, flags)) == -1)
-        {
-            if (errno == EINTR) {
-                continue;
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
-                    socket, EPOLLIN);
-                continue;
-            } else {
-                bytes = -1;
-                break;
-            }
-        }
-        bytes += n;
-
-        if (n == 0 || bytes == (ssize_t)len) {
-            break;
-        }
-    }
-
-    return bytes;
-    printf("hook recv\n");
-
+  if (is_nonblocking(socket)) {
     return g_recv_ptr(socket, buf, len, flags);
+  }
+
+  bytes = 0;
+  for (;;) {
+    if ((n = g_recv_ptr(socket, ((char*)buf) + bytes,
+            len - bytes, flags)) == -1)
+    {
+      if (errno == EINTR) {
+        continue;
+      } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+            socket, EPOLLIN);
+        continue;
+      } else {
+        bytes = -1;
+        break;
+      }
+    }
+    bytes += n;
+
+    if (n == 0 || bytes == (ssize_t)len) {
+      break;
+    }
+  }
+
+  return bytes;
+  printf("hook recv\n");
+
+  return g_recv_ptr(socket, buf, len, flags);
 }
 
 
-ssize_t
+  ssize_t
 send(int socket, void *buf, size_t len, int flags)
 {
-    ssize_t n, bytes;
-    hook_sys_call(send);
-    printf("hook send\n");
+  ssize_t n, bytes;
+  hook_sys_call(send);
+  printf("hook send\n");
 
-    if (is_nonblocking(socket)) {
-        return g_send_ptr(socket, buf, len, flags);
+  if (is_nonblocking(socket)) {
+    return g_send_ptr(socket, buf, len, flags);
+  }
+
+  bytes = 0;
+  for (;;) {
+    if ((n = g_send_ptr(socket, ((char*)buf) + bytes,
+            len - bytes, flags)) == -1)
+    {
+      if (errno == EINTR) {
+        continue;
+      } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+            socket, EPOLLOUT);
+        continue;
+      } else {
+        bytes = -1;
+        break;
+      }
     }
+    bytes += n;
 
-    bytes = 0;
-    for (;;) {
-        if ((n = g_send_ptr(socket, ((char*)buf) + bytes,
-                len - bytes, flags)) == -1)
-        {
-            if (errno == EINTR) {
-                continue;
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
-                    socket, EPOLLOUT);
-                continue;
-            } else {
-                bytes = -1;
-                break;
-            }
-        }
-        bytes += n;
-
-        if (bytes == (ssize_t)len) {
-            break;
-        }
+    if (bytes == (ssize_t)len) {
+      break;
     }
+  }
 
-    return bytes;
+  return bytes;
 }
 

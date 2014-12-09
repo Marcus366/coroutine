@@ -7,14 +7,14 @@ hlist_head g_coroutine_map[1024];
 list_head  g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
 
 
-static int
+  static int
 hash_int(int val)
 {
   return val % 1024;
 }
 
 
-coroutine_ctx_t*
+  coroutine_ctx_t*
 coroutine_get_ctx(coroutine_t cid)
 {
   int index;
@@ -31,7 +31,7 @@ coroutine_get_ctx(coroutine_t cid)
 }
 
 
-void
+  void
 coroutine_set_ctx(coroutine_t cid, coroutine_ctx_t *ctx)
 {
   int index;

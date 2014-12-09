@@ -6,7 +6,7 @@
 
 static cidmap_t *g_cidmap_head;
 
-void
+  void
 coroutine_cidmap_init()
 {
   assert(g_cidmap_head == NULL);
@@ -19,7 +19,7 @@ coroutine_cidmap_init()
 }
 
 
-coroutine_t
+  coroutine_t
 coroutine_get_free_cid()
 {
   unsigned long i, j, map_offset;
@@ -40,14 +40,14 @@ coroutine_get_free_cid()
         continue;
       }
 
-    for (j = 0; j < ull_bits; ++j) {
-      if (!(cidmap->map[i] & ((1ull) << j))) {
-        map_offset = i * ull_bits + j;
-        BITSET_SETBIT(cidmap->map, map_offset, 1);
-        cidmap->used++;
-        return ret + map_offset;
+      for (j = 0; j < ull_bits; ++j) {
+        if (!(cidmap->map[i] & ((1ull) << j))) {
+          map_offset = i * ull_bits + j;
+          BITSET_SETBIT(cidmap->map, map_offset, 1);
+          cidmap->used++;
+          return ret + map_offset;
+        }
       }
-    }
 
     }
   }
@@ -62,7 +62,7 @@ coroutine_get_free_cid()
 }
 
 
-void
+  void
 coroutine_earse_cid(coroutine_t cid)
 {
   cidmap_t *map;
