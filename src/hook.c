@@ -162,6 +162,12 @@ loop:
 }
 
 
+/*
+ * If the fd state has been set nonblock by user, we have no need to hook it.
+ *
+ * Otherwise, we use nonblocking read as blocking read and if the read would
+ * block the process, we should schedule this coroutine.
+ */
 ssize_t
 read(int fd, void *buf, size_t count)
 {
@@ -179,6 +185,9 @@ read(int fd, void *buf, size_t count)
       if (errno == EINTR) {
         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (bytes != 0) {
+          break;
+        }
         coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
             fd, EPOLLIN);
         continue;
