@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <dlfcn.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/epoll.h>
 #include <errno.h>
@@ -38,6 +39,7 @@ syscall1(close, int, int);
 syscall3(open, int, const char*, int, mode_t);
 syscall2(creat, int, const char*, mode_t);
 syscall3(socket, int, int, int, int);
+syscall3(accept, int, int, struct sockaddr *addr, socklen_t *addrlen);
 
 syscall3(fcntl, int, int, int, ...);
 
@@ -48,7 +50,7 @@ syscall4(recv, ssize_t, int, void*, size_t, int);
 syscall4(send, ssize_t, int, const void*, size_t, int);
 
 
-  int
+int
 close(int fd)
 {
   hook_sys_call(close);
@@ -59,7 +61,7 @@ close(int fd)
 }
 
 
-  int
+int
 open(const char *pathname, int flags, mode_t mode)
 {
   int fd;
@@ -80,7 +82,7 @@ open(const char *pathname, int flags, mode_t mode)
 }
 
 
-  int
+int
 creat(const char *pathname, mode_t mode)
 {
   int fd;
@@ -101,7 +103,7 @@ creat(const char *pathname, mode_t mode)
 }
 
 
-  int
+int
 socket(int domain, int type, int protocol)
 {
   int fd;
@@ -122,7 +124,34 @@ socket(int domain, int type, int protocol)
 }
 
 
-  ssize_t
+int
+accept(int socket, struct sockaddr *addr, socklen_t *addrlen)
+{
+  int connfd;
+  hook_sys_call(accept);
+
+  if (is_nonblocking(socket)) {
+    return g_accept_ptr(socket, addr, addrlen);
+  }
+
+loop:
+  if ((connfd = g_accept_ptr(socket, addr, addrlen)) == -1) {
+    if (errno == EINTR) {
+      goto loop;
+    } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      coroutine_sched_block(coroutine_get_ctx(coroutine_self()),
+          socket, EPOLLIN);
+      goto loop;
+    } else {
+      connfd = -1;
+    }
+  }
+
+  return connfd;
+}
+
+
+ssize_t
 read(int fd, void *buf, size_t count)
 {
   ssize_t n, bytes;
@@ -158,7 +187,7 @@ read(int fd, void *buf, size_t count)
 }
 
 
-  ssize_t
+ssize_t
 write(int fd, const void *buf, size_t count)
 {
   ssize_t n, bytes;
@@ -194,7 +223,7 @@ write(int fd, const void *buf, size_t count)
 }
 
 
-  ssize_t
+ssize_t
 recv(int socket, void *buf, size_t len, int flags)
 {
   ssize_t n, bytes;
@@ -235,7 +264,7 @@ recv(int socket, void *buf, size_t len, int flags)
 }
 
 
-  ssize_t
+ssize_t
 send(int socket, void *buf, size_t len, int flags)
 {
   ssize_t n, bytes;
