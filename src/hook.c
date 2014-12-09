@@ -6,34 +6,40 @@
 
 #include "utils.h"
 #include "sched.h"
+#include "coroutine.h"
 
-#define syscall1(name, ret, arg1)                           \
+
+#define syscall1(name, ret, arg1)                         \
   typedef ret (*g_##name##_ptr_t)(arg1);                  \
 g_##name##_ptr_t g_##name##_ptr = NULL
 
-#define syscall2(name, ret, arg1, arg2)                     \
+#define syscall2(name, ret, arg1, arg2)                   \
   typedef ret (*g_##name##_ptr_t)(arg1, arg2);            \
 g_##name##_ptr_t g_##name##_ptr = NULL
 
-#define syscall3(name, ret, arg1, arg2, arg3)               \
+#define syscall3(name, ret, arg1, arg2, arg3)             \
   typedef ret (*g_##name##_ptr_t)(arg1, arg2, arg3);      \
 g_##name##_ptr_t g_##name##_ptr = NULL
 
-#define syscall4(name, ret, arg1, arg2, arg3, arg4)         \
+#define syscall4(name, ret, arg1, arg2, arg3, arg4)       \
   typedef ret (*g_##name##_ptr_t)(arg1, arg2, arg3, arg4);\
 g_##name##_ptr_t g_##name##_ptr = NULL
 
 
-#define hook_sys_call(name)                                 \
+#define hook_sys_call(name)                               \
   do {                                                    \
-    if (g_##name##_ptr == NULL) {                       \
-      g_##name##_ptr =                                \
-      (g_##name##_ptr_t)dlsym(RTLD_NEXT, #name);      \
-    }                                                   \
+    if (!g_init) {                                        \
+      coroutine_init();                                   \
+    }                                                     \
+    if (g_##name##_ptr == NULL) {                         \
+      g_##name##_ptr =                                    \
+      (g_##name##_ptr_t)dlsym(RTLD_NEXT, #name);          \
+    }                                                     \
   } while (0)
 
 
 typedef  __socklen_t socklen_t;
+
 
 syscall1(close, int, int);
 
@@ -148,6 +154,10 @@ loop:
     }
   }
 
+  if (connfd != -1) {
+    coroutine_sched_regfd(connfd);
+  }
+
   return connfd;
 }
 
@@ -179,7 +189,7 @@ read(int fd, void *buf, size_t count)
     }
     bytes += n;
 
-    if (n == 0 || bytes == (ssize_t)count) {
+    if (n == 0) {
       break;
     }
   }

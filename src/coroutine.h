@@ -5,6 +5,13 @@
 typedef long coroutine_t;
 
 
+extern int          g_init;
+extern coroutine_t  g_coroutine_running;
+
+
+int coroutine_init();
+
+
 /**
  * Create a new coroutine but not yet run it.
  *
