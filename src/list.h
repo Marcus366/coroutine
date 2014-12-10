@@ -180,6 +180,15 @@ static inline int list_is_last(const struct list_head *list,
 }
 
 /**
+ * list_is_suspend - tests whether @list is in one of a list
+ * @list: the entry to test
+ */
+static inline int list_is_suspend(const struct list_head *head)
+{
+  return head->prev == NULL && head->next == NULL;
+}
+
+/**
  * list_empty - tests whether a list is empty
  * @head: the list to test.
  */

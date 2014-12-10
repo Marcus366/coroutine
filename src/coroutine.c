@@ -5,6 +5,7 @@
 
 #include "list.h"
 #include "sched.h"
+#include "config.h"
 #include "cidmap.h"
 #include "context.h"
 #include "coroutine.h"
@@ -25,14 +26,17 @@ coroutine_init()
   for (i = 0; i < 1024; ++i) {
     INIT_HLIST_HEAD(&g_coroutine_map[i]);
   }
-coroutine_cidmap_init();
+  coroutine_cidmap_init();
   coroutine_sched_init();
 
   cid = coroutine_get_free_cid();
   main_ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
   main_ctx->flag = RUNNING;
   getcontext(&main_ctx->ctx);
+  main_ctx->ctx.uc_link = NULL;
   coroutine_set_ctx(cid, main_ctx);
+
+  g_coroutine_running = cid;
 }
 
 
@@ -56,6 +60,7 @@ coroutine_create(coroutine_t *cidp, const void *attr,
   if (cid == -1) {
     return -1;
   }
+  *cidp = cid;
 
   ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
   coroutine_set_ctx(cid, ctx);
@@ -73,9 +78,15 @@ coroutine_create(coroutine_t *cidp, const void *attr,
   ctx->ctx.uc_link = &exitctx->ctx;
   makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
-  //printf("make coroutine cid: %ld\n", cid);
+  /* add to ready queue */
+  if (cid != g_exit_coroutine) {
+    list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+  }
 
-  *cidp = cid;
+
+#ifdef __DEBUG__
+  printf("make coroutine cid: %ld\n", cid);
+#endif
 
   return 0;
 }
@@ -91,7 +102,16 @@ coroutine_resume(coroutine_t cid)
   prev_ctx->flag = READY;
   next_ctx->flag = RUNNING;
   g_coroutine_running = cid;
-  //printf("resume coroutine cid: %ld\n", cid);
+
+  list_add_tail(&prev_ctx->queue, &g_coroutine_ready_list);
+  if (!list_is_suspend(&next_ctx->queue)) {
+    list_del(&next_ctx->queue);
+  }
+
+#ifdef __DEBUG__
+  printf("resume coroutine cid: %ld\n", cid);
+#endif
+
   swapcontext(&prev_ctx->ctx, &next_ctx->ctx);
 }
 
@@ -99,6 +119,15 @@ coroutine_resume(coroutine_t cid)
 void
 coroutine_yield()
 {
+  coroutine_t cid;
+  coroutine_ctx_t *ctx;
+
+  cid = coroutine_self();
+  ctx = coroutine_get_ctx(cid);
+
+  ctx->flag = READY;
+  list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+
   coroutine_sched();
 }
 

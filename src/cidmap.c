@@ -19,7 +19,7 @@ coroutine_cidmap_init()
 }
 
 
-  coroutine_t
+coroutine_t
 coroutine_get_free_cid()
 {
   unsigned long i, j, map_offset;
@@ -62,7 +62,7 @@ coroutine_get_free_cid()
 }
 
 
-  void
+void
 coroutine_earse_cid(coroutine_t cid)
 {
   cidmap_t *map;
@@ -73,6 +73,7 @@ coroutine_earse_cid(coroutine_t cid)
     map = map->next;
   }
 
+  map->used--;
   BITSET_SETBIT(map->map, cid, 0);
 }
 

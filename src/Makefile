@@ -21,7 +21,7 @@ OBJS = $(BUILD_PATH)/coroutine.o			\
 			 $(BUILD_PATH)/sched.o
 
 
-$(BUILD_PATH)/%.o: %.c
+$(BUILD_PATH)/%.o: %.c config.h
 	$(CC) $< $(CFLAGS) -c -o $@ -ldl
 
 $(BUILD_PATH)/libcoroutine.a: $(OBJS)

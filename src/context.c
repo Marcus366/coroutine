@@ -5,6 +5,7 @@
 
 hlist_head g_coroutine_map[1024];
 list_head  g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
+list_head  g_coroutine_ready_list = LIST_HEAD_INIT(g_coroutine_ready_list);
 
 
 static int
@@ -24,10 +25,11 @@ coroutine_get_ctx(coroutine_t cid)
   index = hash_int(cid);
   hlist_for_each_entry(ctx, &g_coroutine_map[index], hash) {
     if (ctx->cid == cid) {
-      break;
+      return ctx;
     }
   }
-  return ctx;
+
+  return NULL;
 }
 
 

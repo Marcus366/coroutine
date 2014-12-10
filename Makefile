@@ -1,6 +1,7 @@
-.PHONY: all libco test
+.PHONY: all libco test sample clean
 
 all: libco test sample
+
 
 libco:
 	mkdir -p objs/src
@@ -13,3 +14,6 @@ test: libco
 sample: libco
 	mkdir -p objs/sample
 	(cd sample && make)
+
+clean:
+	rm -rf objs/

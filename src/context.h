@@ -22,12 +22,15 @@ typedef struct {
   hlist_node   hash;
   list_head    list;
 
+  list_head    queue;
+
   uint32_t     flag;
 } coroutine_ctx_t;
 
 
 extern hlist_head g_coroutine_map[1024];
 extern list_head  g_coroutine_list;
+extern list_head  g_coroutine_ready_list;
 
 
 coroutine_ctx_t* coroutine_get_ctx(coroutine_t cid);
