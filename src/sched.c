@@ -109,10 +109,10 @@ coroutine_sched()
   wq_item_t *item, *nitem;
   coroutine_t cid, prev;
   coroutine_ctx_t *ctx, *nextctx;
-  struct epoll_event event[1024];
+  struct epoll_event event[10240];
 
   cid = -1;
-  nfds = epoll_wait(g_pollfd, event, 1024, 0);
+  nfds = epoll_wait(g_pollfd, event, 10240, 0);
   for (i = 0; i < nfds; ++i) {
     fd = (int)event[i].data.fd;
     list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
@@ -146,7 +146,7 @@ coroutine_sched()
     goto do_sched;
   }
 
-  nfds = epoll_wait(g_pollfd, event, 1024, -1);
+  nfds = epoll_wait(g_pollfd, event, 10240, -1);
   for (i = 0; i < nfds; ++i) {
     fd = (int)event[i].data.fd;
     list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
@@ -242,6 +242,7 @@ do_sched:
   list_del(&nextctx->queue);
   nextctx->flag = RUNNING;
   g_coroutine_running = cid;
+  g_coroutine_running_ctx = nextctx;
 
   coroutine_sched_swap_context(ctx, nextctx);
 
@@ -270,6 +271,7 @@ coroutine_exit_sched(void *arg)
     ctx = coroutine_get_ctx(cid);
 
     g_coroutine_running = g_exit_coroutine;
+    g_coroutine_running_ctx = g_exit_coroutine_ctx;
 
     /* clean up correspond bit of cid bitmap. */
     coroutine_erase_cid(cid);

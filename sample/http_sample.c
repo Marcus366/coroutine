@@ -14,6 +14,7 @@
 #define ALMOST   3
 #define DONE     4
 
+int uuid = 0;
 
 const char *out = "HTTP/1.1 200 OK\r\n"
     "Server: COROUTINE/0.1\r\n"
@@ -114,6 +115,10 @@ int main()
     if ((connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &socklen)) == -1) {
       perror("accept error");
       exit(-1);
+    }
+
+    if (++uuid == 1000 * 60) {
+      return 0;
     }
 
     if (coroutine_create(&cid, NULL, co_listen, (void*)connfd) == -1) {

@@ -1,5 +1,5 @@
 CC =gcc
-CFLAGS =-Wall -g -D_GNU_SOURCE
+CFLAGS =-Wall -g -pg -D_GNU_SOURCE
 
 AR =ar
 ARFLAGS =rcs

@@ -28,6 +28,7 @@ typedef struct {
 extern hlist_head g_coroutine_map[1024];
 extern list_head  g_coroutine_list;
 extern list_head  g_coroutine_ready_list;
+extern coroutine_ctx_t *g_coroutine_running_ctx;
 
 
 coroutine_ctx_t* coroutine_get_ctx(coroutine_t cid);

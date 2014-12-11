@@ -39,6 +39,7 @@ coroutine_init()
   coroutine_set_ctx(cid, ctx);
 
   g_coroutine_running = cid;
+  g_coroutine_running_ctx = ctx;
 }
 
 
@@ -101,6 +102,7 @@ coroutine_resume(coroutine_t cid)
   cur_ctx->flag = READY;
   next_ctx->flag = RUNNING;
   g_coroutine_running = cid;
+  g_coroutine_running_ctx = next_ctx;
 
   list_add_tail(&cur_ctx->queue, &g_coroutine_ready_list);
 

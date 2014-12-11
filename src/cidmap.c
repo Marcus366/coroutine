@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <sys/mman.h>
 #include "cidmap.h"
 
 
@@ -15,7 +16,9 @@ coroutine_cidmap_init()
    * TODO:
    * A test for whether malloc of mmap is faster.
    */
-  g_cidmap_head = (cidmap_t*)calloc(1, sizeof(cidmap_t));
+  //g_cidmap_head = (cidmap_t*)calloc(1, sizeof(cidmap_t));
+  g_cidmap_head = (cidmap_t*)mmap(NULL, sizeof(cidmap_t), PROT_READ | PROT_WRITE,
+      MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 }
 
 
@@ -53,7 +56,9 @@ coroutine_get_free_cid()
   }
 
   /* Create a new map for cid. */
-  cidmap->next = (cidmap_t*)calloc(1, sizeof(cidmap_t));
+  //cidmap->next = (cidmap_t*)calloc(1, sizeof(cidmap_t));
+  cidmap->next = (cidmap_t*)mmap(NULL, sizeof(cidmap_t), PROT_READ | PROT_WRITE,
+      MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   cidmap = cidmap->next;
   cidmap->used = 1;
   BITSET_SETBIT(cidmap->map, 0, 1);

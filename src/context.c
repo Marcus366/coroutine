@@ -7,11 +7,16 @@ hlist_head g_coroutine_map[1024];
 list_head  g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
 list_head  g_coroutine_ready_list = LIST_HEAD_INIT(g_coroutine_ready_list);
 
+coroutine_ctx_t *g_coroutine_running_ctx;
+
 
 static int
 hash_int(int val)
 {
-  return val % 1024;
+  val = val * 0x9e370001UL;
+
+  /* return val % 1024; */
+  return val & ((1 << 10) - 1);
 }
 
 
