@@ -3,12 +3,16 @@
 
 
 #include "coroutine.h"
+#include "waitqueue.h"
 #include "context.h"
 
 
 typedef struct fdstat {
   unsigned open : 1;
+
   int fl;
+
+  list_head wq;
 } fdstat_t;
 
 

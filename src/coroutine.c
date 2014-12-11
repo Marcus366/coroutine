@@ -20,7 +20,7 @@ coroutine_init()
 {
   int i;
   coroutine_t cid;
-  coroutine_ctx_t *mainctx;
+  coroutine_ctx_t *ctx;
 
   g_init = 1;
   for (i = 0; i < 1024; ++i) {
@@ -30,11 +30,13 @@ coroutine_init()
   coroutine_sched_init();
 
   cid = coroutine_get_free_cid();
-  mainctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
-  mainctx->flag = RUNNING;
-  getcontext(&mainctx->ctx);
-  mainctx->ctx.uc_link = NULL;
-  coroutine_set_ctx(cid, mainctx);
+  ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
+  ctx->flag = RUNNING;
+  getcontext(&ctx->ctx);
+  ctx->ctx.uc_link = NULL;
+  ctx->queue.prev = NULL;
+  ctx->queue.next = NULL;
+  coroutine_set_ctx(cid, ctx);
 
   g_coroutine_running = cid;
 }

@@ -19,13 +19,14 @@ fdstat_t *g_fds;
 coroutine_t g_exit_coroutine;
 coroutine_ctx_t *g_exit_coroutine_ctx;
 
-static int g_pollfd;
+static int   g_pollfd;
 static int   coroutine_exit_create(coroutine_t *cid);
 static void* coroutine_exit_sched(void *arg);
 
 
 int
 coroutine_sched_init() {
+  int i;
   struct rlimit rlim;
 
   if (coroutine_exit_create(&g_exit_coroutine) == -1) {
@@ -36,9 +37,14 @@ coroutine_sched_init() {
     return -1;
   }
 
-  g_fds = (fdstat_t*)malloc(sizeof(fdstat_t*) * rlim.rlim_max);
+  g_fds = (fdstat_t*)malloc(sizeof(fdstat_t) * rlim.rlim_max);
   if (g_fds == NULL) {
     return -1;
+  }
+
+  for (i = 0; i < (int)rlim.rlim_max; ++i) {
+    g_fds[i].open = 0;
+    INIT_LIST_HEAD(&g_fds[i].wq);
   }
 
   if ((g_pollfd = epoll_create(1024)) == -1) {
@@ -79,12 +85,16 @@ coroutine_sched_unregfd(int fd)
 void
 coroutine_sched_block(coroutine_ctx_t *ctx, int fd, int type)
 {
+  wq_item_t *item;
   struct epoll_event ev;
 
   ctx->flag = BLOCKING;
 
+  item = wqitem_new(ctx);
+  list_add_tail(&item->queue, &g_fds[fd].wq);
+
   ev.events = type;
-  ev.data.ptr = ctx;
+  ev.data.fd = fd;
 
   epoll_ctl(g_pollfd, EPOLL_CTL_ADD, fd, &ev);
 
@@ -95,20 +105,34 @@ coroutine_sched_block(coroutine_ctx_t *ctx, int fd, int type)
 void
 coroutine_sched()
 {
-  int i, nfds;
+  int i, fd, nfds;
+  wq_item_t *item, *nitem;
   coroutine_t cid, prev;
-  coroutine_ctx_t *prev_ctx, *ctx;
+  coroutine_ctx_t *ctx, *nextctx;
   struct epoll_event event[1024];
 
   cid = -1;
   nfds = epoll_wait(g_pollfd, event, 1024, 0);
   for (i = 0; i < nfds; ++i) {
-    ctx = (coroutine_ctx_t*)event[i].data.ptr;
-    assert(ctx->flag == BLOCKING);
-    ctx->flag = READY;
+    fd = (int)event[i].data.fd;
+    list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
+      ctx = item->ctx;
 
-    assert(list_is_suspend(&ctx->queue));
-    list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+      assert(ctx->flag == BLOCKING);
+      ctx->flag = READY;
+
+      assert(list_is_suspend(&ctx->queue));
+      list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+
+      wqitem_free(item);
+
+      if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
+        printf("epoll del error");
+        exit(-1);
+      }
+    }
+
+    assert(list_empty(&g_fds[fd].wq));
   }
 
   list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
@@ -124,14 +148,27 @@ coroutine_sched()
 
   nfds = epoll_wait(g_pollfd, event, 1024, -1);
   for (i = 0; i < nfds; ++i) {
-    ctx = (coroutine_ctx_t*)event[i].data.ptr;
-    assert(ctx->flag == BLOCKING);
-    ctx->flag = READY;
+    fd = (int)event[i].data.fd;
+    list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
+      ctx = item->ctx;
 
-    assert(list_is_suspend(&ctx->queue));
-    list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+      assert(ctx->flag == BLOCKING);
+      ctx->flag = READY;
+      
+      assert(list_is_suspend(&ctx->queue));
+      list_add_tail(&ctx->queue, &g_coroutine_ready_list);
 
-    cid = ctx->cid;
+      wqitem_free(item);
+
+      cid = ctx->cid;
+
+      if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
+        printf("epoll del error");
+        exit(-1);
+      }
+    }
+
+    assert(list_empty(&g_fds[fd].wq));
   }
 
 do_sched:
@@ -199,14 +236,14 @@ do_sched:
 #endif
 
   prev = coroutine_self();
-  prev_ctx = coroutine_get_ctx(prev);
-  ctx = coroutine_get_ctx(cid);
+  ctx = coroutine_get_ctx(prev);
+  nextctx = coroutine_get_ctx(cid);
 
-  list_del(&ctx->queue);
-  ctx->flag = RUNNING;
+  list_del(&nextctx->queue);
+  nextctx->flag = RUNNING;
   g_coroutine_running = cid;
 
-  coroutine_sched_swap_context(prev_ctx, ctx);
+  coroutine_sched_swap_context(ctx, nextctx);
 
   return;
 }

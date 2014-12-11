@@ -12,9 +12,6 @@
 #define BLOCKING   2
 
 
-typedef struct list_head list_head;
-typedef struct hlist_head hlist_head;
-typedef struct hlist_node hlist_node;
 typedef struct {
   coroutine_t  cid;
   u_char      *stk;
