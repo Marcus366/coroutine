@@ -56,15 +56,14 @@ coroutine_sched_init() {
 
 
 int
-coroutine_sched_regfd(int fd)
+coroutine_sched_regfd(int fd, int fl)
 {
-  int fl;
+  int flag;
 
-  if ((fl = getfl(fd)) == -1) {
-    return -1;
-  }
+  flag = O_APPEND | O_ASYNC | O_DIRECT | O_NOATIME | O_NONBLOCK;
+  fl = fl & flag;
 
-  if (setfl(fd, fl | O_NONBLOCK) == -1) {
+  if ((fl & O_NONBLOCK) == 0 && setfl(fd, fl | O_NONBLOCK) == -1) {
     return -1;
   }
 

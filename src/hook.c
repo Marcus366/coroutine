@@ -80,7 +80,7 @@ open(const char *pathname, int flags, mode_t mode)
     return -1;
   }
 
-  if (coroutine_sched_regfd(fd) == -1) {
+  if (coroutine_sched_regfd(fd, flags) == -1) {
     close(fd);
     return -1;
   }
@@ -101,7 +101,7 @@ creat(const char *pathname, mode_t mode)
     return -1;
   }
 
-  if (coroutine_sched_regfd(fd) == -1) {
+  if (coroutine_sched_regfd(fd, 0) == -1) {
     close(fd);
     return -1;
   }
@@ -122,7 +122,7 @@ socket(int domain, int type, int protocol)
     return -1;
   }
 
-  if (coroutine_sched_regfd(fd) == -1) {
+  if (coroutine_sched_regfd(fd, type) == -1) {
     close(fd);
     return -1;
   }
@@ -154,7 +154,7 @@ loop:
   }
 
   if (connfd != -1) {
-    coroutine_sched_regfd(connfd);
+    coroutine_sched_regfd(connfd, 0);
   }
 
   return connfd;

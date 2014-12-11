@@ -24,7 +24,7 @@ extern coroutine_ctx_t *g_exit_coroutine_ctx;
 int coroutine_sched_init();
 
 
-int coroutine_sched_regfd(int fd);
+int coroutine_sched_regfd(int fd, int fl);
 int coroutine_sched_unregfd(int fd);
 
 
