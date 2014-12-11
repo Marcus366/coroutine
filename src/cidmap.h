@@ -9,16 +9,18 @@
 
 typedef struct cidmap {
   struct cidmap *next;
-  uint32_t used;
+  uint32_t       used;
 
   /* Bitmap of used/unused cid.
    * Make the whole cid_map struct size be 4K.
    */
-#define bits_per_map \
-  (1024 * 4 * 8 - (sizeof(struct cidmap*) + sizeof(uint32_t)) * 8)
-  DEFINE_BITSET(map, bits_per_map);
+  ull           *map;
+//#define bits_per_map \
+//  (1024 * 4 * 8 - (sizeof(struct cidmap*) + sizeof(uint32_t)) * 8)
+//  DEFINE_BITSET(map, bits_per_map);
 } cidmap_t;
 
+#define bits_per_map (1024 * 4 * 8)
 
 void coroutine_cidmap_init();
 
