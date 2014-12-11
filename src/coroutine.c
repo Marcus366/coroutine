@@ -20,7 +20,7 @@ coroutine_init()
 {
   int i;
   coroutine_t cid;
-  coroutine_ctx_t *main_ctx;
+  coroutine_ctx_t *mainctx;
 
   g_init = 1;
   for (i = 0; i < 1024; ++i) {
@@ -30,11 +30,11 @@ coroutine_init()
   coroutine_sched_init();
 
   cid = coroutine_get_free_cid();
-  main_ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
-  main_ctx->flag = RUNNING;
-  getcontext(&main_ctx->ctx);
-  main_ctx->ctx.uc_link = NULL;
-  coroutine_set_ctx(cid, main_ctx);
+  mainctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
+  mainctx->flag = RUNNING;
+  getcontext(&mainctx->ctx);
+  mainctx->ctx.uc_link = NULL;
+  coroutine_set_ctx(cid, mainctx);
 
   g_coroutine_running = cid;
 }
@@ -45,7 +45,7 @@ coroutine_create(coroutine_t *cidp, const void *attr,
   void*(*start_rtn)(void*), void *arg)
 {
   coroutine_t cid;
-  coroutine_ctx_t *exitctx, *ctx;
+  coroutine_ctx_t *ctx;
 
   /* TODO:
    * corutine attribute.
@@ -70,18 +70,15 @@ coroutine_create(coroutine_t *cidp, const void *attr,
   ctx->stk  = (u_char*)mmap(NULL, 8192000,
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
-  exitctx = coroutine_get_ctx(g_exit_coroutine);
 
   getcontext(&ctx->ctx);
   ctx->ctx.uc_stack.ss_sp = ctx->stk;
   ctx->ctx.uc_stack.ss_size = 8192000;
-  ctx->ctx.uc_link = &exitctx->ctx;
+  ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
   makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
   /* add to ready queue */
-  if (cid != g_exit_coroutine) {
-    list_add_tail(&ctx->queue, &g_coroutine_ready_list);
-  }
+  list_add_tail(&ctx->queue, &g_coroutine_ready_list);
 
 
 #ifdef __DEBUG__
@@ -95,15 +92,17 @@ coroutine_create(coroutine_t *cidp, const void *attr,
 void
 coroutine_resume(coroutine_t cid)
 {
-  coroutine_t prev = coroutine_self();
-  coroutine_ctx_t *prev_ctx = coroutine_get_ctx(prev);
+  coroutine_t cur = coroutine_self();
+  coroutine_ctx_t *cur_ctx = coroutine_get_ctx(cur);
   coroutine_ctx_t *next_ctx = coroutine_get_ctx(cid);
 
-  prev_ctx->flag = READY;
+  cur_ctx->flag = READY;
   next_ctx->flag = RUNNING;
   g_coroutine_running = cid;
 
-  list_add_tail(&prev_ctx->queue, &g_coroutine_ready_list);
+  list_add_tail(&cur_ctx->queue, &g_coroutine_ready_list);
+
+  /* if the next coroutine is in ready list, remove it */
   if (!list_is_suspend(&next_ctx->queue)) {
     list_del(&next_ctx->queue);
   }
@@ -112,7 +111,7 @@ coroutine_resume(coroutine_t cid)
   printf("resume coroutine cid: %ld\n", cid);
 #endif
 
-  swapcontext(&prev_ctx->ctx, &next_ctx->ctx);
+  coroutine_sched_swap_context(cur_ctx, next_ctx);
 }
 
 

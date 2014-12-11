@@ -12,8 +12,9 @@ typedef struct fdstat {
 } fdstat_t;
 
 
-extern coroutine_t  g_exit_coroutine;
-extern fdstat_t    *g_fds;
+extern fdstat_t        *g_fds;
+extern coroutine_t      g_exit_coroutine;
+extern coroutine_ctx_t *g_exit_coroutine_ctx;
 
 
 int coroutine_sched_init();
@@ -26,6 +27,9 @@ int coroutine_sched_unregfd(int fd);
 void coroutine_sched_block(coroutine_ctx_t *ctx, int fd, int type);
 
 void coroutine_sched();
+
+
+void coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next);
 
 
 #endif

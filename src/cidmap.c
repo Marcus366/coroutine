@@ -63,7 +63,7 @@ coroutine_get_free_cid()
 
 
 void
-coroutine_earse_cid(coroutine_t cid)
+coroutine_erase_cid(coroutine_t cid)
 {
   cidmap_t *map;
 

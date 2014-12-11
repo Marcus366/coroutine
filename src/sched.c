@@ -10,14 +10,17 @@
 #include "list.h"
 #include "utils.h"
 #include "sched.h"
+#include "cidmap.h"
 #include "config.h"
 #include "context.h"
 
 
-coroutine_t g_exit_coroutine;
 fdstat_t *g_fds;
+coroutine_t g_exit_coroutine;
+coroutine_ctx_t *g_exit_coroutine_ctx;
 
 static int g_pollfd;
+static int   coroutine_exit_create(coroutine_t *cid);
 static void* coroutine_exit_sched(void *arg);
 
 
@@ -25,9 +28,7 @@ int
 coroutine_sched_init() {
   struct rlimit rlim;
 
-  if (coroutine_create(&g_exit_coroutine, NULL,
-      coroutine_exit_sched, NULL) == -1)
-  {
+  if (coroutine_exit_create(&g_exit_coroutine) == -1) {
     return -1;
   }
 
@@ -205,9 +206,16 @@ do_sched:
   ctx->flag = RUNNING;
   g_coroutine_running = cid;
 
-  swapcontext(&prev_ctx->ctx, &ctx->ctx);
+  coroutine_sched_swap_context(prev_ctx, ctx);
 
   return;
+}
+
+
+void
+coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next)
+{
+  swapcontext(&cur->ctx, &next->ctx);
 }
 
 
@@ -227,7 +235,7 @@ coroutine_exit_sched(void *arg)
     g_coroutine_running = g_exit_coroutine;
 
     /* clean up correspond bit of cid bitmap. */
-    coroutine_earse_cid(cid);
+    coroutine_erase_cid(cid);
 
     assert(list_is_suspend(&ctx->queue));
     list_del(&ctx->list);
@@ -243,5 +251,41 @@ coroutine_exit_sched(void *arg)
   }
 
   return NULL;
+}
+
+
+int
+coroutine_exit_create(coroutine_t *cidp)
+{
+  coroutine_t cid;
+  coroutine_ctx_t *ctx;
+
+  cid = coroutine_get_free_cid();
+  if (cid == -1) {
+    return -1;
+  }
+  *cidp = cid;
+
+  ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
+  coroutine_set_ctx(cid, ctx);
+
+  ctx->cid  = cid;
+  ctx->flag = READY;
+  ctx->stk  = (u_char*)mmap(NULL, 8192000,
+        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+  getcontext(&ctx->ctx);
+  ctx->ctx.uc_stack.ss_sp = ctx->stk;
+  ctx->ctx.uc_stack.ss_size = 8192000;
+  ctx->ctx.uc_link = NULL;
+  makecontext(&ctx->ctx, (void(*)())coroutine_exit_sched, 1, NULL);
+
+  g_exit_coroutine_ctx = ctx;
+
+#ifdef __DEBUG__
+  printf("make exit coroutine cid: %ld\n", cid);
+#endif
+
+  return 0;
 }
 
