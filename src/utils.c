@@ -22,13 +22,6 @@ set_nonblocking(int fd)
 
 
 int
-is_nonblocking(int fd)
-{
-  return g_fds[fd].fl & O_NONBLOCK;
-}
-
-
-int
 getfl(int fd)
 {
   return fcntl(fd, F_GETFL);
@@ -43,5 +36,12 @@ setfl(int fd, int fl)
   }
 
   return 0;
+}
+
+
+int __co_inline__
+is_nonblocking(int fd)
+{
+  return g_fds[fd].fl & O_NONBLOCK;
 }
 

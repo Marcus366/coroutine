@@ -4,6 +4,10 @@
 
 #include <sys/types.h>
 
+#include "global.h"
+#include "sched.h"
+
+
 int set_nonblocking(int fd);
 int getfl(int fd);
 int setfl(int fd, int fl);

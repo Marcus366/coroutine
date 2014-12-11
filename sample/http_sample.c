@@ -72,8 +72,8 @@ void* co_listen(void *arg)
   }
 
   if (state == DONE) {
-    write(fd, out, strlen(out));
-    close(fd);
+    (void) write(fd, out, strlen(out));
+    (void) close(fd);
   }
 
   return NULL;

@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -pg
+CFLAGS=-Wall -O2 -pg
 
 LIBCOROUTINE=-L../objs/src/ -lcoroutine -ldl
 

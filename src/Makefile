@@ -1,5 +1,5 @@
 CC =gcc
-CFLAGS =-Wall -g -pg -D_GNU_SOURCE
+CFLAGS =-Wall -O2 -pg -D_GNU_SOURCE
 
 AR =ar
 ARFLAGS =rcs
@@ -23,7 +23,7 @@ OBJS = $(BUILD_PATH)/coroutine.o			\
 			 $(BUILD_PATH)/waitqueue.o
 
 
-$(BUILD_PATH)/%.o: %.c config.h
+$(BUILD_PATH)/%.o: %.c config.h global.h
 	$(CC) $< $(CFLAGS) -c -o $@ -ldl
 
 $(BUILD_PATH)/libcoroutine.a: $(OBJS)
