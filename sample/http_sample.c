@@ -157,6 +157,7 @@ const char *out = "HTTP/1.1 200 OK\r\n"
     "Content-Length: 0\r\n"
     "\r\n\r\n";
 
+int uuid;
 
 int
 set_nonblocking(int fd)
@@ -312,6 +313,10 @@ ev_accept(int fd, short event, void *arg)
         perror("read error");
         exit(-1);
       }
+    }
+
+    if (++uuid == 60000) {
+      exit(0);
     }
 
     if (set_nonblocking(connfd) == -1) {

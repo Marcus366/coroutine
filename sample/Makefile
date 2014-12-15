@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -O2 -pg
 
-LIBCOROUTINE=-L../objs/src/ -lcoroutine -ldl
+LIBCOROUTINE=-L../objs/src/ -lcoroutine -ldl#-levent
 
 SAMPLE_OBJS_PATH=../objs/sample
 

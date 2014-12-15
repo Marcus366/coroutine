@@ -111,6 +111,13 @@ coroutine_sched()
   struct epoll_event event[10240];
 
   cid = -1;
+  list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
+    if (ctx->flag == READY && ctx->cid != g_exit_coroutine && ctx->cid != coroutine_self()) {
+      cid = ctx->cid;
+      goto do_sched;
+    }
+  }
+
   nfds = epoll_wait(g_pollfd, event, 10240, 0);
   for (i = 0; i < nfds; ++i) {
     fd = (int)event[i].data.fd;
