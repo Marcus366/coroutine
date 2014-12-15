@@ -131,11 +131,11 @@ coroutine_sched()
       list_add_tail(&ctx->queue, &g_coroutine_ready_list);
 
       wqitem_free(item);
+    }
 
-      if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
-        printf("epoll del error");
-        exit(-1);
-      }
+    if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
+      perror("epoll del error");
+      exit(-1);
     }
 
     assert(list_empty(&g_fds[fd].wq));
@@ -167,11 +167,11 @@ coroutine_sched()
       wqitem_free(item);
 
       cid = ctx->cid;
+    }
 
-      if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
-        printf("epoll del error");
-        exit(-1);
-      }
+    if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
+      perror("epoll del error");
+      exit(-1);
     }
 
     assert(list_empty(&g_fds[fd].wq));

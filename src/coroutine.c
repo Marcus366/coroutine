@@ -77,7 +77,7 @@ coroutine_create(coroutine_t *cidp, const void *attr,
   getcontext(&ctx->ctx);
   ctx->ctx.uc_stack.ss_sp = ctx->stk;
   ctx->ctx.uc_stack.ss_size = 8192000;
-  ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
+  ctx->ctx.uc_link = &g_coroutine_running_ctx->ctx;
   makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
   /* add to ready queue */
