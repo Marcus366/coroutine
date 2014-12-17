@@ -4,7 +4,6 @@
 
 #include <sys/types.h>
 
-#include "global.h"
 #include "sched.h"
 
 

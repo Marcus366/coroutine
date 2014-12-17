@@ -10,18 +10,16 @@
 #include "list.h"
 #include "utils.h"
 #include "sched.h"
-#include "cidmap.h"
 #include "config.h"
 #include "context.h"
 
 
-fdstat_t *g_fds;
-coroutine_t g_exit_coroutine;
+fdstat_t        *g_fds;
+int              g_pollfd;
 coroutine_ctx_t *g_exit_coroutine_ctx;
 
-static int   g_pollfd;
-static int   coroutine_exit_create(coroutine_t *cid);
-static void* coroutine_exit(void *arg);
+static void*            coroutine_exit(void *arg);
+static coroutine_ctx_t* coroutine_exit_create();
 
 
 int
@@ -29,7 +27,7 @@ coroutine_sched_init() {
   int i;
   struct rlimit rlim;
 
-  if (coroutine_exit_create(&g_exit_coroutine) == -1) {
+  if (coroutine_exit_create() == NULL) {
     return -1;
   }
 
@@ -47,7 +45,7 @@ coroutine_sched_init() {
     INIT_LIST_HEAD(&g_fds[i].wq);
   }
 
-  if ((g_pollfd = epoll_create(1024)) == -1) {
+  if ((g_pollfd = epoll_create(10240)) == -1) {
     return -1;
   }
 
@@ -106,14 +104,11 @@ coroutine_sched()
 {
   int i, fd, nfds;
   wq_item_t *item, *nitem;
-  coroutine_t cid, prev;
-  coroutine_ctx_t *ctx, *nextctx;
+  coroutine_ctx_t *ctx, *cur;
   struct epoll_event event[10240];
 
-  cid = -1;
   list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
-    if (ctx->flag == READY && ctx->cid != g_exit_coroutine && ctx->cid != coroutine_self()) {
-      cid = ctx->cid;
+    if (ctx->flag == READY && ctx != g_coroutine_running_ctx) {
       goto do_sched;
     }
   }
@@ -124,11 +119,12 @@ coroutine_sched()
     list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
       ctx = item->ctx;
 
-      assert(ctx->flag == BLOCKING);
-      ctx->flag = READY;
+      if (ctx->flag == BLOCKING) {
+        ctx->flag = READY;
 
-      assert(list_is_suspend(&ctx->queue));
-      list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+        assert(list_is_suspend(&ctx->queue));
+        list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+      }
 
       wqitem_free(item);
     }
@@ -142,14 +138,9 @@ coroutine_sched()
   }
 
   list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
-    if (ctx->flag == READY && ctx->cid != g_exit_coroutine && ctx->cid != coroutine_self()) {
-      cid = ctx->cid;
-      break;
+    if (ctx->flag == READY && ctx != g_coroutine_running_ctx) {
+      goto do_sched;
     }
-  }
-
-  if (cid != -1) {
-    goto do_sched;
   }
 
   nfds = epoll_wait(g_pollfd, event, 10240, -1);
@@ -158,15 +149,14 @@ coroutine_sched()
     list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
       ctx = item->ctx;
 
-      assert(ctx->flag == BLOCKING);
-      ctx->flag = READY;
-      
-      assert(list_is_suspend(&ctx->queue));
-      list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+      if (ctx->flag == BLOCKING) {
+        ctx->flag = READY;
+
+        assert(list_is_suspend(&ctx->queue));
+        list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+      }
 
       wqitem_free(item);
-
-      cid = ctx->cid;
     }
 
     if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
@@ -232,25 +222,17 @@ do_sched:
   printf("\n");
 #endif
 
-  if (cid == -1) {
-    printf("no coroutine can be sched!\n");
-    exit(0);
-  }
-
 #ifdef __DEBUG__
-  printf("sched coroutine cid: %ld\n", cid);
+  printf("sched coroutine cid: %llu\n", ctx->cid);
 #endif
 
-  prev = coroutine_self();
-  ctx = coroutine_get_ctx(prev);
-  nextctx = coroutine_get_ctx(cid);
+  cur = g_coroutine_running_ctx;
 
-  list_del(&nextctx->queue);
-  nextctx->flag = RUNNING;
-  g_coroutine_running = cid;
-  g_coroutine_running_ctx = nextctx;
+  list_del(&ctx->queue);
+  ctx->flag = RUNNING;
+  g_coroutine_running_ctx = ctx;
 
-  coroutine_sched_swap_context(ctx, nextctx);
+  coroutine_sched_swap_context(cur, ctx);
 
   return;
 }
@@ -266,36 +248,28 @@ coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next)
 void*
 coroutine_exit(void *arg)
 {
-  coroutine_t cid;
   coroutine_ctx_t *pctx, *ctx;
   for (;;) {
     /*
      * Next line will get the last running coroutine id,
      * NOT the coroutine id of exit_sched.
      */
-    cid = coroutine_self();
-    ctx = coroutine_get_ctx(cid);
+    ctx = g_coroutine_running_ctx;
     pctx = ctx->parent;
 
-    g_coroutine_running = g_exit_coroutine;
     g_coroutine_running_ctx = g_exit_coroutine_ctx;
-
-    /* clean up correspond bit of cid bitmap. */
-    coroutine_erase_cid(cid);
 
     assert(list_is_suspend(&ctx->queue));
     list_del(&ctx->list);
-    hlist_del(&ctx->hash);
     munmap(ctx->ctx.uc_stack.ss_sp, ctx->ctx.uc_stack.ss_size);
     free(ctx);
 
 #ifdef __DEBUG__
-    printf("coroutine exit: %ld\n", cid);
+    printf("coroutine exit: %llu\n", ctx->cid);
 #endif
 
-    if (pctx != NULL && pctx->flag == READY) {
+    if (pctx != NULL /* && pctx->flag == READY */) {
         pctx->flag = RUNNING;
-        g_coroutine_running = pctx->cid;
         g_coroutine_running_ctx = pctx;
 
         if (!list_is_suspend(&pctx->queue)) {
@@ -312,28 +286,17 @@ coroutine_exit(void *arg)
 }
 
 
-int
-coroutine_exit_create(coroutine_t *cidp)
+coroutine_ctx_t*
+coroutine_exit_create()
 {
-  coroutine_t cid;
   coroutine_ctx_t *ctx;
 
-  cid = coroutine_get_free_cid();
-  if (cid == -1) {
-    return -1;
-  }
-  *cidp = cid;
-
   ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
-  coroutine_set_ctx(cid, ctx);
 
-  ctx->cid  = cid;
   ctx->flag = READY;
-  ctx->stk  = (u_char*)mmap(NULL, 8192000,
-        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-
   getcontext(&ctx->ctx);
-  ctx->ctx.uc_stack.ss_sp = ctx->stk;
+  ctx->ctx.uc_stack.ss_sp = mmap(NULL, 8192000,
+        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   ctx->ctx.uc_stack.ss_size = 8192000;
   ctx->ctx.uc_link = NULL;
   makecontext(&ctx->ctx, (void(*)())coroutine_exit, 1, NULL);
@@ -341,9 +304,10 @@ coroutine_exit_create(coroutine_t *cidp)
   g_exit_coroutine_ctx = ctx;
 
 #ifdef __DEBUG__
-  printf("make exit coroutine cid: %ld\n", cid);
+  ctx->cid = 333333333333;
+  printf("make exit coroutine cid: %llu\n", ctx->cid);
 #endif
 
-  return 0;
+  return ctx;
 }
 

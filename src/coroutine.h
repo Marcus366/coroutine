@@ -2,11 +2,10 @@
 #define __COROUTINE_H__
 
 
-typedef long coroutine_t;
+#include "context.h"
 
 
-extern int          g_init;
-extern coroutine_t  g_coroutine_running;
+extern int g_init;
 
 
 void coroutine_init();
@@ -15,14 +14,13 @@ void coroutine_init();
 /**
  * Create a new coroutine but not yet run it.
  *
- * @cidp: an out argument of attached coroutine id if success.
  * @attr: attributes of coroutine (have no meaning at present).
  * @start_rtn: function pointer run by coroutine once started.
  * @arg:  argument of start_rtn.
  *
- * @return: 0 if success, 1 if error.
+ * @return: a coroutine context if success, NULL if error.
  */
-int coroutine_create(coroutine_t *cidp, const void *attr,
+coroutine_ctx_t* coroutine_create(const void *attr,
     void*(*start_rtn)(void*), void *arg);
 
 
@@ -32,19 +30,21 @@ int coroutine_create(coroutine_t *cidp, const void *attr,
  *
  * @cid: id of coroutine which you want to run now.
  */
-void coroutine_resume(coroutine_t cid);
+void coroutine_resume(coroutine_ctx_t *ctx);
 
 
 /**
- * Pause the current coroutine.
+ * Pause the current coroutine and schedule to anyone if ready.
  */
 void coroutine_yield();
 
 
-coroutine_t coroutine_self();
-
-
-int coroutine_equal(coroutine_t lhs, coroutine_t rhs);
+/**
+ * Return the current running coroutine context.
+ *
+ * @return: context related to current coroutine.
+ */
+coroutine_ctx_t* coroutine_running();
 
 
 #endif

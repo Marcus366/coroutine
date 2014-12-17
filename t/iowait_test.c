@@ -40,9 +40,7 @@ void co_idle()
 
 
 int main() {
-  coroutine_t cid;
-
-  if (coroutine_create(&cid, NULL, co_read, NULL) == -1) {
+  if (coroutine_create(NULL, co_read, NULL) == NULL) {
     printf("create read failed\n");
     exit(-1);
   }

@@ -107,7 +107,6 @@ int main()
 
   for (;;) {
     int connfd;
-    coroutine_t cid;
     socklen_t socklen;
     struct sockaddr_in cliaddr;
 
@@ -121,7 +120,7 @@ int main()
       return 0;
     }
 
-    if (coroutine_create(&cid, NULL, co_listen, (void*)connfd) == -1) {
+    if (coroutine_create(NULL, co_listen, (void*)connfd) == NULL) {
       printf("coroutine_create error");
       exit(-1);
     }

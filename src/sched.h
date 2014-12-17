@@ -17,7 +17,6 @@ typedef struct fdstat {
 
 
 extern fdstat_t        *g_fds;
-extern coroutine_t      g_exit_coroutine;
 extern coroutine_ctx_t *g_exit_coroutine_ctx;
 
 
