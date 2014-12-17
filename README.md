@@ -1,10 +1,13 @@
 coroutine
 ========================================
-Coroutine is a cooperative multitasking library with pthread-like interface.
+Coroutine is a cooperative multitasking library in pure C.
 
+This library mainly focus on network programming. It has the same performance compared to event-driven model with *more graceful code organization*.
+
+Status
+----------------------------------------
+The project is under development. Any issue or pull request is welcomed.
 
 How to Use?
 ----------------------------------------
-Coroutine use a type named *coroutine_t* as identity of each coroutine. Every operation should be related with this id.
-
-The API is listed and well commented in the file coroutine.h
+Interfaces are all easy to understand and you can read the document in [coroutine.h](https://github.com/sysu2012zzp/coroutine/blol/master/src/coroutine.h)
