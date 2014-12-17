@@ -33,7 +33,8 @@ coroutine_init()
   ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
   ctx->flag = RUNNING;
   getcontext(&ctx->ctx);
-  ctx->ctx.uc_link = NULL;
+  ctx->parent = NULL;
+  ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
   ctx->queue.prev = NULL;
   ctx->queue.next = NULL;
   coroutine_set_ctx(cid, ctx);
@@ -73,11 +74,12 @@ coroutine_create(coroutine_t *cidp, const void *attr,
   ctx->stk  = (u_char*)mmap(NULL, 8192000,
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
-
   getcontext(&ctx->ctx);
+  ctx->parent = g_coroutine_running_ctx;
   ctx->ctx.uc_stack.ss_sp = ctx->stk;
   ctx->ctx.uc_stack.ss_size = 8192000;
-  ctx->ctx.uc_link = &g_coroutine_running_ctx->ctx;
+  //ctx->ctx.uc_link = &coroutine_get_ctx(g_coroutine_running)->ctx;
+  ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
   makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
   /* add to ready queue */

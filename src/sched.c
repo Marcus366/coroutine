@@ -21,7 +21,7 @@ coroutine_ctx_t *g_exit_coroutine_ctx;
 
 static int   g_pollfd;
 static int   coroutine_exit_create(coroutine_t *cid);
-static void* coroutine_exit_sched(void *arg);
+static void* coroutine_exit(void *arg);
 
 
 int
@@ -264,10 +264,10 @@ coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next)
 
 
 void*
-coroutine_exit_sched(void *arg)
+coroutine_exit(void *arg)
 {
   coroutine_t cid;
-  coroutine_ctx_t *ctx;
+  coroutine_ctx_t *pctx, *ctx;
   for (;;) {
     /*
      * Next line will get the last running coroutine id,
@@ -275,6 +275,7 @@ coroutine_exit_sched(void *arg)
      */
     cid = coroutine_self();
     ctx = coroutine_get_ctx(cid);
+    pctx = ctx->parent;
 
     g_coroutine_running = g_exit_coroutine;
     g_coroutine_running_ctx = g_exit_coroutine_ctx;
@@ -291,6 +292,18 @@ coroutine_exit_sched(void *arg)
 #ifdef __DEBUG__
     printf("coroutine exit: %ld\n", cid);
 #endif
+
+    if (pctx != NULL && pctx->flag == READY) {
+        pctx->flag = RUNNING;
+        g_coroutine_running = pctx->cid;
+        g_coroutine_running_ctx = pctx;
+
+        if (!list_is_suspend(&pctx->queue)) {
+          list_del(&pctx->queue);
+        }
+
+        coroutine_sched_swap_context(g_exit_coroutine_ctx, pctx);
+    }
 
     coroutine_sched();
   }
@@ -323,7 +336,7 @@ coroutine_exit_create(coroutine_t *cidp)
   ctx->ctx.uc_stack.ss_sp = ctx->stk;
   ctx->ctx.uc_stack.ss_size = 8192000;
   ctx->ctx.uc_link = NULL;
-  makecontext(&ctx->ctx, (void(*)())coroutine_exit_sched, 1, NULL);
+  makecontext(&ctx->ctx, (void(*)())coroutine_exit, 1, NULL);
 
   g_exit_coroutine_ctx = ctx;
 

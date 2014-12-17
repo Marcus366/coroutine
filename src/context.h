@@ -12,17 +12,20 @@
 #define BLOCKING   2
 
 
-typedef struct {
-  coroutine_t  cid;
-  u_char      *stk;
-  ucontext_t   ctx;
-  hlist_node   hash;
-  list_head    list;
+typedef struct coroutine_ctx coroutine_ctx_t;
+typedef struct coroutine_ctx {
+  coroutine_t      cid;
+  coroutine_ctx_t *parent;
+  u_char          *stk;
+  ucontext_t       ctx;
+  uint32_t         flag;
 
-  list_head    queue;
-
-  uint32_t     flag;
-} coroutine_ctx_t;
+  hlist_node       hash;
+  /* coroutine list */
+  list_head        list;
+  /*   wait queue   */
+  list_head        queue;
+};
 
 
 extern hlist_head g_coroutine_map[1024];
