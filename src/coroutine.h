@@ -28,7 +28,7 @@ coroutine_ctx_t* coroutine_create(const void *attr,
  * Run a coroutine with given coroutine id.
  * The caller routine will be suspended at once.
  *
- * @cid: id of coroutine which you want to run now.
+ * @ctx: coontext of coroutine which you want to run now.
  */
 void coroutine_resume(coroutine_ctx_t *ctx);
 
