@@ -39,7 +39,7 @@ setfl(int fd, int fl)
 }
 
 
-int __co_inline__
+int
 is_nonblocking(int fd)
 {
   return g_fds[fd].fl & O_NONBLOCK;
