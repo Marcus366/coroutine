@@ -10,25 +10,16 @@
 #include "coroutine.h"
 
 
-int              g_init;
-
-
 void
 coroutine_init()
 {
   coroutine_ctx_t *ctx;
 
-  g_init = 1;
   coroutine_sched_init();
 
-  ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
-  ctx->flag = RUNNING;
-  getcontext(&ctx->ctx);
-  ctx->parent = NULL;
-  ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
-  ctx->queue.prev = NULL;
-  ctx->queue.next = NULL;
-
+  /* init main coroutin */
+  ctx = coroutine_ctx_new_main();
+  list_add(&g_coroutine_list, &ctx->list);
 #ifdef __DEBUG__
   ctx->cid = 6666666;
 #endif
@@ -48,25 +39,11 @@ coroutine_create(const void *attr,
    */
   (void)attr;
 
-  if (!g_init) {
-    coroutine_init();
-  }
-
-  ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
+  ctx = coroutine_ctx_new((void(*)())start_rtn, arg);
 #ifdef __DEBUG__
   static unsigned long long uuid = 0;
   ctx->cid = uuid++;
 #endif
-
-  ctx->flag = READY;
-  getcontext(&ctx->ctx);
-  ctx->parent = g_coroutine_running_ctx;
-  ctx->ctx.uc_stack.ss_sp = (u_char*)mmap(NULL, 8192000,
-        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-  ctx->ctx.uc_stack.ss_size = 8192000;
-  //ctx->ctx.uc_link = &coroutine_get_ctx(g_coroutine_running)->ctx;
-  ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
-  makecontext(&ctx->ctx, (void(*)())start_rtn, 1, arg);
 
   /* add to coroutine list */
   list_add(&ctx->list, &g_coroutine_list);

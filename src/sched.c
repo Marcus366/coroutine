@@ -18,16 +18,13 @@ fdstat_t        *g_fds;
 int              g_pollfd;
 coroutine_ctx_t *g_exit_coroutine_ctx;
 
-static void*            coroutine_exit(void *arg);
-static coroutine_ctx_t* coroutine_exit_create();
-
 
 int
 coroutine_sched_init() {
   int i;
   struct rlimit rlim;
 
-  if (coroutine_exit_create() == NULL) {
+  if ((g_exit_coroutine_ctx = coroutine_ctx_new_exit()) == NULL) {
     return -1;
   }
 
@@ -106,36 +103,6 @@ coroutine_sched()
   wq_item_t *item, *nitem;
   coroutine_ctx_t *ctx, *cur;
   struct epoll_event event[10240];
-
-  list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
-    if (ctx->flag == READY && ctx != g_coroutine_running_ctx) {
-      goto do_sched;
-    }
-  }
-
-  nfds = epoll_wait(g_pollfd, event, 10240, 0);
-  for (i = 0; i < nfds; ++i) {
-    fd = (int)event[i].data.fd;
-    list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
-      ctx = item->ctx;
-
-      if (ctx->flag == BLOCKING) {
-        ctx->flag = READY;
-
-        assert(list_is_suspend(&ctx->queue));
-        list_add_tail(&ctx->queue, &g_coroutine_ready_list);
-      }
-
-      wqitem_free(item);
-    }
-
-    if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
-      perror("epoll del error");
-      exit(-1);
-    }
-
-    assert(list_empty(&g_fds[fd].wq));
-  }
 
   list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
     if (ctx->flag == READY && ctx != g_coroutine_running_ctx) {
@@ -283,31 +250,5 @@ coroutine_exit(void *arg)
   }
 
   return NULL;
-}
-
-
-coroutine_ctx_t*
-coroutine_exit_create()
-{
-  coroutine_ctx_t *ctx;
-
-  ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
-
-  ctx->flag = READY;
-  getcontext(&ctx->ctx);
-  ctx->ctx.uc_stack.ss_sp = mmap(NULL, 8192000,
-        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-  ctx->ctx.uc_stack.ss_size = 8192000;
-  ctx->ctx.uc_link = NULL;
-  makecontext(&ctx->ctx, (void(*)())coroutine_exit, 1, NULL);
-
-  g_exit_coroutine_ctx = ctx;
-
-#ifdef __DEBUG__
-  ctx->cid = 333333333333;
-  printf("make exit coroutine cid: %llu\n", ctx->cid);
-#endif
-
-  return ctx;
 }
 

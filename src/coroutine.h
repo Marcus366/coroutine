@@ -5,9 +5,11 @@
 #include "context.h"
 
 
-extern int g_init;
-
-
+/**
+ * Initialize the coroutine library.
+ * It must be called before other function in coroutine library,
+ * Otherwise, the program will crash with strange error.
+ */
 void coroutine_init();
 
 

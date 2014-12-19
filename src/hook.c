@@ -28,9 +28,6 @@ g_##name##_ptr_t g_##name##_ptr = NULL
 
 #define hook_sys_call(name)                               \
   do {                                                    \
-    if (!g_init) {                                        \
-      coroutine_init();                                   \
-    }                                                     \
     if (g_##name##_ptr == NULL) {                         \
       g_##name##_ptr =                                    \
       (g_##name##_ptr_t)dlsym(RTLD_NEXT, #name);          \

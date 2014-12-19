@@ -34,6 +34,8 @@ void coroutine_sched();
 
 void coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next);
 
+void* coroutine_exit(void *arg);
+
 
 #endif
 
