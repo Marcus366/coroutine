@@ -5,6 +5,9 @@
 #include "context.h"
 
 
+/**************     coroutine interface     *********************/
+
+
 /**
  * Initialize the coroutine library.
  * It must be called before other function in coroutine library,
@@ -30,7 +33,7 @@ coroutine_ctx_t* coroutine_create(const void *attr,
  * Run a coroutine with given coroutine id.
  * The caller routine will be suspended at once.
  *
- * @ctx: coontext of coroutine which you want to run now.
+ * @ctx: context of coroutine which you want to run now.
  */
 void coroutine_resume(coroutine_ctx_t *ctx);
 
@@ -47,6 +50,21 @@ void coroutine_yield();
  * @return: context related to current coroutine.
  */
 coroutine_ctx_t* coroutine_running();
+
+
+/**************     co_operation interface     *********************/
+
+typedef struct co_ipv4_addr_s co_ipv4_addr_t;
+typedef struct co_tcp4_s co_tcp4_t;
+
+int co_tcp4_open(co_tcp4_t *tcp);
+int co_tcp4_bind(co_tcp4_t *tcp, co_ipv4_addr_t *addr);
+
+int co_tcp4_listen(co_tcp4_t *tcp);
+
+int co_tcp4_connect(co_tcp4_t *tcp, co_ipv4_addr_t *addr);
+
+
 
 
 #endif

@@ -11,14 +11,14 @@ SRCS = coroutine.c										\
 			 utils.c												\
 			 context.o											\
 			 sched.o												\
-			 waitqueue.o
+			 tcp.o
 
 OBJS = $(BUILD_PATH)/coroutine.o			\
 			 $(BUILD_PATH)/hook.o						\
 			 $(BUILD_PATH)/utils.o					\
 			 $(BUILD_PATH)/context.o				\
 			 $(BUILD_PATH)/sched.o					\
-			 $(BUILD_PATH)/waitqueue.o
+			 $(BUILD_PATH)/tcp.o
 
 
 $(BUILD_PATH)/%.o: %.c config.h

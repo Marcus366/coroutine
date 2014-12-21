@@ -79,13 +79,11 @@ coroutine_sched_unregfd(int fd)
 void
 coroutine_sched_block(coroutine_ctx_t *ctx, int fd, int type)
 {
-  wq_item_t *item;
   struct epoll_event ev;
 
   ctx->flag = BLOCKING;
 
-  item = wqitem_new(ctx);
-  list_add_tail(&item->queue, &g_fds[fd].wq);
+  list_add_tail(&ctx->queue, &g_fds[fd].wq);
 
   ev.events = type;
   ev.data.fd = fd;
@@ -100,7 +98,6 @@ void
 coroutine_sched()
 {
   int i, fd, nfds;
-  wq_item_t *item, *nitem;
   coroutine_ctx_t *ctx, *cur;
   struct epoll_event event[10240];
 
@@ -113,17 +110,14 @@ coroutine_sched()
   nfds = epoll_wait(g_pollfd, event, 10240, -1);
   for (i = 0; i < nfds; ++i) {
     fd = (int)event[i].data.fd;
-    list_for_each_entry_safe(item, nitem, &g_fds[fd].wq, queue) {
-      ctx = item->ctx;
-
+    list_for_each_entry_safe(ctx, cur, &g_fds[fd].wq, queue) {
       if (ctx->flag == BLOCKING) {
         ctx->flag = READY;
 
-        assert(list_is_suspend(&ctx->queue));
+        list_del(&ctx->queue);
         list_add_tail(&ctx->queue, &g_coroutine_ready_list);
       }
 
-      wqitem_free(item);
     }
 
     if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
@@ -194,10 +188,10 @@ do_sched:
 #endif
 
   cur = g_coroutine_running_ctx;
+  g_coroutine_running_ctx = ctx;
 
   list_del(&ctx->queue);
   ctx->flag = RUNNING;
-  g_coroutine_running_ctx = ctx;
 
   coroutine_sched_swap_context(cur, ctx);
 

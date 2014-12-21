@@ -29,8 +29,7 @@ void* co_listen(void *arg)
   char buf[1024];
 
   state = 0;
-  fd = (long)arg;
-
+  fd = (long)arg; 
   while (state != DONE && (n = read(fd, buf, 1024)) > 0) {
     //buf[n] = 0;
     //printf("read %s\n", buf);
@@ -84,6 +83,8 @@ int main()
 {
   int sockfd;
   struct sockaddr_in addr;
+
+  coroutine_init();
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     perror("socket error");
