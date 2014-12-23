@@ -4,14 +4,12 @@ CFLAGS=-Wall -g
 LIBCOROUTINE=-L../objs/src/ -lcoroutine -ldl
 
 TEST_OBJS_PATH=../objs/test
+TEST_SRC=test.c 					\
+		 test_tcp_open.c
 
 .PHONY: all
 
-all: $(TEST_OBJS_PATH)/switch_test				\
-	$(TEST_OBJS_PATH)/iowait_test
+all: $(TEST_OBJS_PATH)/test
 
-$(TEST_OBJS_PATH)/switch_test: switch_test.c ../objs/src/libcoroutine.a
-	$(CC) $(CFLAGS) $< -o $@ $(LIBCOROUTINE)
-
-$(TEST_OBJS_PATH)/iowait_test: iowait_test.c ../objs/src/libcoroutine.a
-	$(CC) $(CFLAGS) $< -o $@ $(LIBCOROUTINE)
+$(TEST_OBJS_PATH)/test: $(TEST_SRC) ../objs/src/libcoroutine.a
+	$(CC) $(CFLAGS) $(TEST_SRC) -o $@ $(LIBCOROUTINE)
