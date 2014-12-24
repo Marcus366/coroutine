@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
+#include "io.h"
 #include "sched.h"
 #include "co_structre.h"
 
@@ -56,6 +57,32 @@ co_tcp4_listen(co_tcp4_t *tcp, int backlog)
 
 
 int
+co_tcp4_accept(co_tcp4_t *tcp, co_ipv4_addr_t *addr)
+{
+  int connfd;
+  addr->len = sizeof(addr->addr);
+
+loop:
+  if ((connfd = accept(tcp->socket, (struct sockaddr*)&addr->addr, &addr->len)) == -1) {
+    if (errno == EINTR) {
+      goto loop;
+    } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      coroutine_sched_block(g_coroutine_running_ctx, tcp->socket, EPOLLIN);
+      goto loop;
+    } else {
+      connfd = -1;
+    }
+  }
+
+  if (connfd != -1) {
+    coroutine_sched_regfd(connfd, 0);
+  }
+
+  return connfd;
+}
+
+
+int
 co_tcp4_connect(co_tcp4_t *tcp, co_ipv4_addr_t *addr)
 {
   return connect(tcp->socket, (struct sockaddr*)&addr->addr, addr->len);
@@ -65,60 +92,13 @@ co_tcp4_connect(co_tcp4_t *tcp, co_ipv4_addr_t *addr)
 ssize_t
 co_tcp4_read(co_tcp4_t *tcp, void *buf, size_t count)
 {
-  ssize_t n, bytes;
-
-  bytes = 0;
-  for (;;) {
-    if ((n = read(tcp->socket, ((char*)buf) + bytes, count - bytes)) == -1) {
-      if (errno == EINTR) {
-        continue;
-      } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        if (bytes != 0) {
-          break;
-        }
-        coroutine_sched_block(g_coroutine_running_ctx, tcp->socket, EPOLLIN);
-        continue;
-      } else {
-        bytes = -1;
-        break;
-      }
-    }
-    bytes += n;
-
-    if (n == 0) {
-      break;
-    }
-  }
-
-  return bytes;
+  return co__read(tcp->socket, buf, count);
 }
 
 
 ssize_t
 co_tcp4_write(co_tcp4_t *tcp, const void *buf, size_t count)
 {
-  ssize_t n, bytes;
-
-  bytes = 0;
-  for (;;) {
-    if ((n = write(tcp->socket, ((char*)buf) + bytes, count - bytes)) == -1) {
-      if (errno == EINTR) {
-        continue;
-      } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        coroutine_sched_block(g_coroutine_running_ctx, tcp->socket, EPOLLOUT);
-        continue;
-      } else {
-        bytes = -1;
-        break;
-      }
-    }
-    bytes += n;
-
-    if (bytes == (ssize_t)count) {
-      break;
-    }
-  }
-
-  return bytes;
+  return co__write(tcp->socket, buf, count);
 }
 
