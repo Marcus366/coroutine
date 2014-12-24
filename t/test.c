@@ -10,11 +10,11 @@
 #undef MARCOS
 
 
-#define MARCOS(name) {test_##name, 0},
+#define MARCOS(name) {test_##name, #name, 0},
 static test_entry_t entries[] =
 {
 #include "test_list.h"
-  {NULL, 0}
+  {NULL, NULL, 0}
 };
 #undef MARCOS
 
@@ -40,11 +40,15 @@ int main()
     if (entry->code != 0) {
       isPass = 0;
       printf("%s\n", entry->log);
+    } else {
+      printf("pass test %s\n", entry->name);
     }
   }
 
   if (isPass) {
     printf("pass all test case\n");
+  } else {
+    printf("some test cases fail\n");
   }
 
   return 0;

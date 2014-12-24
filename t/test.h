@@ -23,6 +23,7 @@
 typedef struct test_entry_s {
   int  (*func)(char *str);
 
+  char*  name;
   int    code;
   char   log[64];
 } test_entry_t;
