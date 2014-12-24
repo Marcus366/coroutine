@@ -56,8 +56,7 @@ coroutine_ctx_t* coroutine_running();
 /**************     co_operation interface     *********************/
 
 
-typedef struct co_ipv4_addr_s co_ipv4_addr_t;
-typedef struct co_tcp4_s co_tcp4_t;
+typedef struct co_tcp_s co_tcp_t;
 
 
 /**
@@ -69,7 +68,8 @@ typedef struct co_tcp4_s co_tcp4_t;
  *
  * @return: 0 means ok.
  */
-int co_ipv4_addr_init(co_ipv4_addr_t *addr, const char *ip, unsigned short port);
+int co_ip4_addr_init(struct sockaddr_in *addr, const char *ip, unsigned short port);
+int co_ip6_addr_init(struct sockaddr_in6 *addr, const char *ip, unsigned short port);
 
 
 /* socket interface
@@ -81,15 +81,27 @@ ssize_t co_sendmsg(int sockfd, const struct msghdr *msg, int flags);
 
 
 /* tcp interface */
-int co_tcp4_open(co_tcp4_t *tcp);
-int co_tcp4_bind(co_tcp4_t *tcp, co_ipv4_addr_t *addr);
-int co_tcp4_listen(co_tcp4_t *tcp, int backlog);
+int co_tcp4_open(co_tcp_t *tcp);
+int co_tcp6_open(co_tcp_t *tcp);
 
-int co_tcp4_accept(co_tcp4_t *tcp, co_ipv4_addr_t *addr);
-int co_tcp4_connect(co_tcp4_t *tcp, co_ipv4_addr_t *addr);
+int co_tcp_bind(co_tcp_t *tcp, struct sockaddr *addr);
+int co_tcp_listen(co_tcp_t *tcp, int backlog);
+int co_tcp_accept(co_tcp_t *tcp, struct sockaddr *addr, socklen_t *len);
 
-ssize_t co_tcp4_read(co_tcp4_t *tcp, void *buf, size_t count);
-ssize_t co_tcp4_write(co_tcp4_t *tcp, const void *buf, size_t count);
+int co_tcp_connect(co_tcp_t *tcp, struct sockaddr *addr);
+
+ssize_t co_tcp_read(co_tcp_t *tcp, void *buf, size_t count);
+ssize_t co_tcp_write(co_tcp_t *tcp, const void *buf, size_t count);
+
+
+/* file interface */
+int co_file_open(const char *pathname, int flags, ... /* mode_t */);
+
+ssize_t co_read(int fd, void *buf, size_t count);
+ssize_t co_write(int fd, const void *buf, size_t count);
+
+ssize_t co_pread(int fd, void *buf, size_t count, off_t offset_t);
+ssize_t co_pwrite(int fd, void *buf, size_t count, off_t offset_t);
 
 
 #endif

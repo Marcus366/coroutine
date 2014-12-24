@@ -5,12 +5,7 @@
 #include <netinet/in.h>
 
 
-struct co_ipv4_addr_s {
-  struct sockaddr_in addr;
-  socklen_t          len;
-};
-
-struct co_tcp4_s {
+struct co_tcp_s {
   int socket;
 };
 

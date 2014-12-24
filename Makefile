@@ -11,7 +11,7 @@ test: libco
 	mkdir -p objs/test
 	(cd t && make)
 
-runtest: test
+runtest:
 	./objs/test/test
 
 sample: libco
