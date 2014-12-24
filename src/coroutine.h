@@ -72,6 +72,14 @@ typedef struct co_tcp4_s co_tcp4_t;
 int co_ipv4_addr_init(co_ipv4_addr_t *addr, const char *ip, unsigned short port);
 
 
+/* socket interface
+size_t co_send(co_socket_t *sock, const void *buf, size_t len, int flags);
+ssize_t co_sendto(int sockfd, const void *buf, size_t len, int flags,
+    const struct sockaddr *dest_addr, socklen_t addrlen);
+ssize_t co_sendmsg(int sockfd, const struct msghdr *msg, int flags);
+*/
+
+
 /* tcp interface */
 int co_tcp4_open(co_tcp4_t *tcp);
 int co_tcp4_bind(co_tcp4_t *tcp, co_ipv4_addr_t *addr);
@@ -82,7 +90,6 @@ int co_tcp4_connect(co_tcp4_t *tcp, co_ipv4_addr_t *addr);
 
 ssize_t co_tcp4_read(co_tcp4_t *tcp, void *buf, size_t count);
 ssize_t co_tcp4_write(co_tcp4_t *tcp, const void *buf, size_t count);
-
 
 
 #endif

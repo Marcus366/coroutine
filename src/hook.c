@@ -59,7 +59,7 @@ close(int fd)
 {
   hook_sys_call(close);
 
-  coroutine_sched_unregfd(fd);
+  coroutine_unregister_fd(fd);
 
   return g_close_ptr(fd);
 }
@@ -77,7 +77,7 @@ open(const char *pathname, int flags, mode_t mode)
     return -1;
   }
 
-  if (coroutine_sched_regfd(fd, flags) == -1) {
+  if (coroutine_register_fd(fd, flags) == -1) {
     close(fd);
     return -1;
   }
@@ -98,7 +98,7 @@ creat(const char *pathname, mode_t mode)
     return -1;
   }
 
-  if (coroutine_sched_regfd(fd, 0) == -1) {
+  if (coroutine_register_fd(fd, 0) == -1) {
     close(fd);
     return -1;
   }
@@ -119,7 +119,7 @@ socket(int domain, int type, int protocol)
     return -1;
   }
 
-  if (coroutine_sched_regfd(fd, type) == -1) {
+  if (coroutine_register_fd(fd, type) == -1) {
     close(fd);
     return -1;
   }
@@ -143,7 +143,7 @@ loop:
     if (errno == EINTR) {
       goto loop;
     } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      coroutine_sched_block(g_coroutine_running_ctx, socket, EPOLLIN);
+      coroutine_block(g_coroutine_running_ctx, socket, EPOLLIN);
       goto loop;
     } else {
       connfd = -1;
@@ -151,7 +151,7 @@ loop:
   }
 
   if (connfd != -1) {
-    coroutine_sched_regfd(connfd, 0);
+    coroutine_register_fd(connfd, 0);
   }
 
   return connfd;
@@ -184,7 +184,7 @@ read(int fd, void *buf, size_t count)
         if (bytes != 0) {
           break;
         }
-        coroutine_sched_block(g_coroutine_running_ctx, fd, EPOLLIN);
+        coroutine_block(g_coroutine_running_ctx, fd, EPOLLIN);
         continue;
       } else {
         bytes = -1;
@@ -219,7 +219,7 @@ write(int fd, const void *buf, size_t count)
       if (errno == EINTR) {
         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        coroutine_sched_block(g_coroutine_running_ctx, fd, EPOLLOUT);
+        coroutine_block(g_coroutine_running_ctx, fd, EPOLLOUT);
         continue;
       } else {
         bytes = -1;
@@ -256,7 +256,7 @@ recv(int socket, void *buf, size_t len, int flags)
       if (errno == EINTR) {
         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        coroutine_sched_block(g_coroutine_running_ctx, socket, EPOLLIN);
+        coroutine_block(g_coroutine_running_ctx, socket, EPOLLIN);
         continue;
       } else {
         bytes = -1;
@@ -296,7 +296,7 @@ send(int socket, void *buf, size_t len, int flags)
       if (errno == EINTR) {
         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        coroutine_sched_block(g_coroutine_running_ctx, socket, EPOLLOUT);
+        coroutine_block(g_coroutine_running_ctx, socket, EPOLLOUT);
         continue;
       } else {
         bytes = -1;

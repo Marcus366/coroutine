@@ -51,7 +51,7 @@ coroutine_sched_init() {
 
 
 int
-coroutine_sched_regfd(int fd, int fl)
+coroutine_register_fd(int fd, int fl)
 {
   int flag;
 
@@ -69,7 +69,7 @@ coroutine_sched_regfd(int fd, int fl)
 
 
 int
-coroutine_sched_unregfd(int fd)
+coroutine_unregister_fd(int fd)
 {
   g_fds[fd].open = 0;
   return 0;
@@ -77,7 +77,7 @@ coroutine_sched_unregfd(int fd)
 
 
 void
-coroutine_sched_block(coroutine_ctx_t *ctx, int fd, int type)
+coroutine_block(coroutine_ctx_t *ctx, int fd, int type)
 {
   struct epoll_event ev;
 

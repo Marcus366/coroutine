@@ -67,7 +67,7 @@ loop:
     if (errno == EINTR) {
       goto loop;
     } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      coroutine_sched_block(g_coroutine_running_ctx, tcp->socket, EPOLLIN);
+      coroutine_block(g_coroutine_running_ctx, tcp->socket, EPOLLIN);
       goto loop;
     } else {
       connfd = -1;
@@ -75,7 +75,7 @@ loop:
   }
 
   if (connfd != -1) {
-    coroutine_sched_regfd(connfd, 0);
+    coroutine_register_fd(connfd, 0);
   }
 
   return connfd;

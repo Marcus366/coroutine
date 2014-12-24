@@ -10,10 +10,10 @@ struct co_ipv4_addr_s {
   socklen_t          len;
 };
 
-
 struct co_tcp4_s {
   int socket;
 };
+
 
 #endif
 
