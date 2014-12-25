@@ -7,10 +7,6 @@
 
 
 typedef struct fdstat {
-  unsigned open : 1;
-
-  int fl;
-
   list_head wq;
 } fdstat_t;
 
@@ -26,7 +22,7 @@ int coroutine_register_fd(int fd, int fl);
 int coroutine_unregister_fd(int fd);
 
 
-void coroutine_block(coroutine_ctx_t *ctx, int fd, int type);
+void coroutine_block(int fd, int type);
 
 void coroutine_sched();
 

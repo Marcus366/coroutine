@@ -42,6 +42,6 @@ setfl(int fd, int fl)
 int
 is_nonblocking(int fd)
 {
-  return g_fds[fd].fl & O_NONBLOCK;
+  return 0;
 }
 

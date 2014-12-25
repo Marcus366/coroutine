@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -g
 
-LIBCOROUTINE=-L../objs/src -lcoroutine -ldl
+LIBCOROUTINE=-L../objs/src -lcoroutine
 
 TEST_OBJS_PATH=../objs/test
 TEST_SRC=test.c 					\

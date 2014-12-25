@@ -1,5 +1,5 @@
 CC =gcc
-CFLAGS =-Wall -O2 -pg -D_GNU_SOURCE
+CFLAGS =-Wall -O2 -pg
 
 AR =ar
 ARFLAGS =rcs
@@ -24,7 +24,7 @@ OBJS = $(BUILD_PATH)/coroutine.o			\
 
 
 $(BUILD_PATH)/%.o: %.c config.h
-	$(CC) $< $(CFLAGS) -c -o $@ -ldl
+	$(CC) $< $(CFLAGS) -c -o $@
 
 $(BUILD_PATH)/libcoroutine.a: $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)

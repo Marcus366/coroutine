@@ -58,7 +58,7 @@ co_tcp6_open(co_tcp_t *tcp)
 
 
 int
-co_tcp_bind(co_tcp_t *tcp, struct sockaddr *addr)
+co_tcp_bind(co_tcp_t *tcp, const struct sockaddr *addr)
 {
   if (addr->sa_family == AF_INET) {
     return bind(tcp->socket, addr, sizeof(struct sockaddr_in));
@@ -87,7 +87,7 @@ loop:
     if (errno == EINTR) {
       goto loop;
     } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      coroutine_block(g_coroutine_running_ctx, tcp->socket, EPOLLIN);
+      coroutine_block(tcp->socket, EPOLLIN);
       goto loop;
     } else {
       connfd = -1;

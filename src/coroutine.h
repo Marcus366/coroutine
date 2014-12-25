@@ -2,6 +2,9 @@
 #define __COROUTINE_H__
 
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "context.h"
 #include "co_structre.h"
 
@@ -11,8 +14,9 @@
 
 /**
  * Initialize the coroutine library.
- * It must be called before other function in coroutine library,
- * Otherwise, the program will crash with strange error.
+ *
+ * It must be called before other functions in coroutine library.
+ * Otherwise, the program will crash with unknown error.
  */
 void coroutine_init();
 
@@ -84,7 +88,7 @@ ssize_t co_sendmsg(int sockfd, const struct msghdr *msg, int flags);
 int co_tcp4_open(co_tcp_t *tcp);
 int co_tcp6_open(co_tcp_t *tcp);
 
-int co_tcp_bind(co_tcp_t *tcp, struct sockaddr *addr);
+int co_tcp_bind(co_tcp_t *tcp, const struct sockaddr *addr);
 int co_tcp_listen(co_tcp_t *tcp, int backlog);
 int co_tcp_accept(co_tcp_t *tcp, struct sockaddr *addr, socklen_t *len);
 

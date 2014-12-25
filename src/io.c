@@ -44,7 +44,7 @@ co_read(int fd, void *buf, size_t count)
         if (nbytes != 0) {
           break;
         }
-        coroutine_block(g_coroutine_running_ctx, fd, EPOLLIN);
+        coroutine_block(fd, EPOLLIN);
         continue;
       } else {
         nbytes = -1;
@@ -73,7 +73,7 @@ co_write(int fd, const void *buf, size_t count)
       if (errno == EINTR) {
         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        coroutine_block(g_coroutine_running_ctx, fd, EPOLLOUT);
+        coroutine_block(fd, EPOLLOUT);
         continue;
       } else {
         nbytes = -1;
@@ -105,7 +105,7 @@ co_pread(int fd, void *buf, size_t count, off_t offset)
         if (nbytes != 0) {
           break;
         }
-        coroutine_block(g_coroutine_running_ctx, fd, EPOLLIN);
+        coroutine_block(fd, EPOLLIN);
         continue;
       } else {
         nbytes = -1;
@@ -135,7 +135,7 @@ co_pwrite(int fd, void *buf, size_t count, off_t offset)
       if (errno == EINTR) {
         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        coroutine_block(g_coroutine_running_ctx, fd, EPOLLOUT);
+        coroutine_block(fd, EPOLLOUT);
         continue;
       } else {
         nbytes = -1;

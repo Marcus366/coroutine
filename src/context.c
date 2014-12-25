@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include <ucontext.h>
 #include <sys/mman.h>
 #include "sched.h"
@@ -15,6 +16,7 @@ coroutine_ctx_t *g_coroutine_running_ctx;
 coroutine_ctx_t*
 coroutine_ctx_new(void(*func)(), void *arg)
 {
+  static unsigned long long uuid = 2;
   coroutine_ctx_t *ctx;
 
   ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
@@ -22,6 +24,7 @@ coroutine_ctx_new(void(*func)(), void *arg)
     return NULL;
   }
 
+  ctx->cid = uuid++;
   ctx->flag = READY;
 
   getcontext(&ctx->ctx);
@@ -46,6 +49,7 @@ coroutine_ctx_new_main()
     return NULL;
   }
 
+  ctx->cid = 1;
   ctx->flag = RUNNING;
 
   getcontext(&ctx->ctx);
@@ -81,8 +85,8 @@ coroutine_ctx_new_exit()
   ctx->ctx.uc_link = NULL;
   makecontext(&ctx->ctx, (void(*)())coroutine_exit, 1, NULL);
 
+  ctx->cid = 0;
 #ifdef __DEBUG__
-  ctx->cid = 333333333333;
   printf("make exit coroutine cid: %llu\n", ctx->cid);
 #endif
 
@@ -93,4 +97,10 @@ coroutine_ctx_new_exit()
 void
 coroutine_ctx_free(coroutine_ctx_t *ctx)
 {
+  assert(list_is_suspend(&ctx->list));
+  assert(list_is_suspend(&ctx->queue));
+
+  munmap(ctx->ctx.uc_stack.ss_sp, ctx->ctx.uc_stack.ss_size);
+  free(ctx);
 }
+

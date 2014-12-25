@@ -38,7 +38,6 @@ coroutine_sched_init() {
   }
 
   for (i = 0; i < (int)rlim.rlim_max; ++i) {
-    g_fds[i].open = 0;
     INIT_LIST_HEAD(&g_fds[i].wq);
   }
 
@@ -53,17 +52,6 @@ coroutine_sched_init() {
 int
 coroutine_register_fd(int fd, int fl)
 {
-  int flag;
-
-  flag = O_APPEND | O_ASYNC | O_DIRECT | O_NOATIME | O_NONBLOCK;
-  fl = fl & flag;
-
-  if ((fl & O_NONBLOCK) == 0 && setfl(fd, fl | O_NONBLOCK) == -1) {
-    return -1;
-  }
-
-  g_fds[fd].open = 1;
-  g_fds[fd].fl = fl;
   return 0;
 }
 
@@ -71,16 +59,17 @@ coroutine_register_fd(int fd, int fl)
 int
 coroutine_unregister_fd(int fd)
 {
-  g_fds[fd].open = 0;
   return 0;
 }
 
 
 void
-coroutine_block(coroutine_ctx_t *ctx, int fd, int type)
+coroutine_block(int fd, int type)
 {
   struct epoll_event ev;
+  coroutine_ctx_t *ctx;
 
+  ctx = g_coroutine_running_ctx;
   ctx->flag = BLOCKING;
 
   list_add_tail(&ctx->queue, &g_fds[fd].wq);

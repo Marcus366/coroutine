@@ -11,7 +11,8 @@ co_pipe_open(int pipefd[2])
 
 
 int
-co_pipe_open(int pipefd[2], int flags)
+co_pipe2_open(int pipefd[2], int flags)
 {
   return pipe2(pipefd, flags | O_NONBLOCK);
 }
+

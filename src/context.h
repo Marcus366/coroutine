@@ -6,22 +6,24 @@
 #include "list.h"
 
 
-#define READY      0
-#define RUNNING    1
-#define BLOCKING   2
+typedef enum coroutine_state_s {
+  READY = 0,
+  RUNNING,
+  BLOCKING
+} coroutine_state_t;
 
 
 typedef struct coroutine_ctx_s coroutine_ctx_t;
 struct coroutine_ctx_s {
-  unsigned long long cid;
-  coroutine_ctx_t *parent;
-  ucontext_t       ctx;
-  uint32_t         flag;
+  unsigned long long  cid;
+  coroutine_state_t   flag;
+  coroutine_ctx_t    *parent;
+  ucontext_t          ctx;
 
   /* coroutine list */
-  list_head        list;
+  list_head       list;
   /*   wait queue   */
-  list_head        queue;
+  list_head       queue;
 };
 
 
