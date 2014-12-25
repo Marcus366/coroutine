@@ -4,8 +4,9 @@ CFLAGS=-Wall -g
 LIBCOROUTINE=-L../objs/src -lcoroutine
 
 TEST_OBJS_PATH=../objs/test
-TEST_SRC=test.c 					\
-		 test_tcp_open.c
+TEST_SRC=test.c 							\
+		 test_tcp_open.c					\
+		 test_coroutine_create.c
 
 .PHONY: all
 

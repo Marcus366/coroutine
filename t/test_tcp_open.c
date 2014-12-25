@@ -1,5 +1,4 @@
 #include "test.h"
-#include <sys/socket.h>
 
 
 TEST_IMPL(tcp_open) {
