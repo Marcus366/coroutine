@@ -11,6 +11,7 @@ SRCS = coroutine.c										\
 			 context.o											\
 			 sched.o												\
 			 io.o														\
+			 pipe.o													\
 			 tcp.o
 
 OBJS = $(BUILD_PATH)/coroutine.o			\
@@ -18,6 +19,7 @@ OBJS = $(BUILD_PATH)/coroutine.o			\
 			 $(BUILD_PATH)/context.o				\
 			 $(BUILD_PATH)/sched.o					\
 			 $(BUILD_PATH)/io.o							\
+			 $(BUILD_PATH)/pipe.o						\
 			 $(BUILD_PATH)/tcp.o
 
 

@@ -104,5 +104,10 @@ ssize_t co_pread(int fd, void *buf, size_t count, off_t offset_t);
 ssize_t co_pwrite(int fd, void *buf, size_t count, off_t offset_t);
 
 
+/* pipe interface */
+int co_pipe_open(int pipefd[2]);
+int co_pipe2_open(int pipefd[2], int flags);
+
+
 #endif
 
