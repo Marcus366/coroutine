@@ -29,7 +29,7 @@ void* co_listen(void *arg)
   char buf[1024];
 
   state = 0;
-  fd = (long)arg; 
+  fd = (long)arg;
   while (state != DONE && (n = read(fd, buf, 1024)) > 0) {
     //buf[n] = 0;
     //printf("read %s\n", buf);
@@ -71,7 +71,7 @@ void* co_listen(void *arg)
   }
 
   if (state == DONE) {
-    (void) write(fd, out, strlen(out));
+    (void) co_write(fd, out, strlen(out));
     (void) close(fd);
   }
 
@@ -81,27 +81,28 @@ void* co_listen(void *arg)
 
 int main()
 {
-  int sockfd;
+  co_tcp_t tcp;
   struct sockaddr_in addr;
 
   coroutine_init();
 
-  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    perror("socket error");
+
+  if (co_tcp4_open(&tcp) == -1) {
+    perror("co_tcp_open error");
     exit(-1);
   }
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(8080);
+  if (co_ip4_addr_init(&addr, "0.0.0.0", 8080) == -1) {
+    perror("ipaddr init error");
+    exit(-1);
+  }
 
-  if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+  if (co_tcp_bind(&tcp, (struct sockaddr*)&addr) == -1) {
     perror("bind error");
     exit(-1);
   }
 
-  if (listen(sockfd, 1024) == -1) {
+  if (co_tcp_listen(&tcp, 1024) == -1) {
     perror("listen error");
     exit(-1);
   }
@@ -112,7 +113,7 @@ int main()
     struct sockaddr_in cliaddr;
 
     socklen = sizeof(cliaddr);
-    if ((connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &socklen)) == -1) {
+    if ((connfd = co_tcp_accept(&tcp, (struct sockaddr*)&cliaddr, &socklen)) == -1) {
       perror("accept error");
       exit(-1);
     }
