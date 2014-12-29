@@ -40,10 +40,6 @@ coroutine_create(const void *attr,
   (void)attr;
 
   ctx = coroutine_ctx_new((void(*)())start_rtn, arg);
-#ifdef __DEBUG__
-  static unsigned long long uuid = 0;
-  ctx->cid = uuid++;
-#endif
 
   /* add to coroutine list */
   list_add(&ctx->list, &g_coroutine_list);
