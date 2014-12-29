@@ -19,8 +19,8 @@ int              g_pollfd;
 coroutine_ctx_t *g_exit_coroutine_ctx;
 
 
-extern void coroutine__sched_swap_context(ucontext_t *from, ucontext_t *to)
-  asm("_coroutine__sched_swap_context");
+extern void coroutine__sched_swap_context(ucontext_t *from, ucontext_t *to);
+  //asm("_coroutine__sched_swap_context");
 
 
 int
@@ -54,7 +54,7 @@ coroutine_sched_init() {
 
 
 int
-coroutine_register_fd(int fd, int fl)
+coroutine_register_fd(int fd)
 {
   return 0;
 }
@@ -76,6 +76,7 @@ coroutine_block(int fd, int type)
   ctx = g_coroutine_running_ctx;
   ctx->flag = BLOCKING;
 
+  assert(list_is_suspend(&ctx->queue));
   list_add_tail(&ctx->queue, &g_fds[fd].wq);
 
   ev.events = type;
@@ -94,8 +95,9 @@ coroutine_sched()
   coroutine_ctx_t *ctx, *cur;
   struct epoll_event event[10240];
 
+find_ready:
   list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
-    if (ctx->flag == READY && ctx != g_coroutine_running_ctx) {
+    if (ctx->flag == READY) {
       goto do_sched;
     }
   }
@@ -120,30 +122,31 @@ coroutine_sched()
 
     assert(list_empty(&g_fds[fd].wq));
   }
+  goto find_ready;
 
 do_sched:
 #ifdef __DEBUG_SHOW_ALL_LIST__
   printf("list:\n");
-  list_for_each_entry(ctx, &g_coroutine_list, list) {
-    printf("%ld ", ctx->cid);
-    switch (ctx->flag) {
+  list_for_each_entry(cur, &g_coroutine_list, list) {
+    printf("%ld ", cur->cid);
+    switch (cur->flag) {
     case RUNNING:
       printf("running\n");
-      if (!list_is_suspend(&ctx->queue)) {
+      if (!list_is_suspend(&cur->queue)) {
         printf("state not consistent\n");
         exit(-1);
       }
       break;
     case BLOCKING:
       printf("blocking\n");
-      if (!list_is_suspend(&ctx->queue)) {
+      if (!list_is_suspend(&cur->queue)) {
         printf("state not consistent\n");
         exit(-1);
       }
       break;
     case READY:
       printf("ready\n");
-      if (ctx->cid != g_exit_coroutine && list_is_suspend(&ctx->queue)) {
+      if (cur->cid != g_exit_coroutine_ctx->cid && list_is_suspend(&ctx->queue)) {
         printf("state not consistent\n");
         exit(-1);
       }
@@ -156,9 +159,9 @@ do_sched:
 
 #ifdef __DEBUG_SHOW_READY_LIST__
   printf("ready list:\n");
-  list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
-    printf("%ld ", ctx->cid);
-    switch (ctx->flag) {
+  list_for_each_entry(cur, &g_coroutine_ready_list, queue) {
+    printf("%ld ", cur->cid);
+    switch (cur->flag) {
     case RUNNING:
       printf("state not consistent\n");
       exit(-1);
@@ -166,7 +169,7 @@ do_sched:
       printf("state not consistent\n");
       exit(-1);
     case READY:
-      if (ctx->cid == g_exit_coroutine) {
+      if (cur->cid == g_exit_coroutine_ctx->cid) {
         printf("state not consistent\n");
         exit(-1);
       }
@@ -181,12 +184,14 @@ do_sched:
 #endif
 
   cur = g_coroutine_running_ctx;
-  g_coroutine_running_ctx = ctx;
+  if (cur->cid != ctx->cid) {
+    g_coroutine_running_ctx = ctx;
 
-  list_del(&ctx->queue);
-  ctx->flag = RUNNING;
+    list_del(&ctx->queue);
+    ctx->flag = RUNNING;
 
-  coroutine_sched_swap_context(cur, ctx);
+    coroutine_sched_swap_context(cur, ctx);
+  }
 
   return;
 }
@@ -194,7 +199,7 @@ do_sched:
 
 asm (
 ".text\n"
-"_coroutine__sched_swap_context:\n"
+"coroutine__sched_swap_context:\n"
 "pushq %r12\n"
 "pushq %r13\n"
 "pushq %r14\n"

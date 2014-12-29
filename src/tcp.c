@@ -95,7 +95,7 @@ loop:
   }
 
   if (connfd != -1) {
-    coroutine_register_fd(connfd, 0);
+    coroutine_register_fd(connfd);
   }
 
   return connfd;

@@ -35,7 +35,7 @@ coroutine_ctx_t* coroutine_create(const void *attr,
 
 
 /**
- * Run a coroutine with given coroutine id.
+ * Run a coroutine with given coroutine context.
  * The caller routine will be suspended at once.
  *
  * @param ctx: context of coroutine which you want to run now.

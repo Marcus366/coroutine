@@ -11,8 +11,7 @@ void *func1(void *str) {
 
   for (i = 0; i < 10; ++i) {
     ASSERT(i == seq / 2, "resume fail");
-    ++seq;
-    ++co1_run;
+    ++seq, ++co1_run;
     coroutine_resume(ctx[1]);
   }
 
@@ -24,8 +23,7 @@ void *func2(void *str) {
 
   for (i = 0; i < 10; ++i) {
     ASSERT(i == seq / 2, "resume fail");
-    ++seq;
-    ++co2_run;
+    ++seq, ++co2_run;
     coroutine_resume(ctx[0]);
   }
 
@@ -40,8 +38,8 @@ TEST_IMPL(coroutine_resume) {
   ctx[1] = coroutine_create(NULL, func2, str);
 
   coroutine_resume(ctx[0]);
-  ASSERT(co1_run == 10, "coroutine1 not run enough");
-  ASSERT(co2_run == 10, "coroutine2 not run enough");
+  ASSERT(co1_run == 10, "coroutine1 NOT run enough");
+  ASSERT(co2_run == 10, "coroutine2 NOT run enough");
 
   return 0;
 }

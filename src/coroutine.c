@@ -19,10 +19,7 @@ coroutine_init()
 
   /* init main coroutin */
   ctx = coroutine_ctx_new_main();
-  list_add(&g_coroutine_list, &ctx->list);
-#ifdef __DEBUG__
-  ctx->cid = 6666666;
-#endif
+  list_add(&ctx->list, &g_coroutine_list);
 
   g_coroutine_running_ctx = ctx;
 }

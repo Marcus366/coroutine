@@ -86,7 +86,6 @@ int main()
 
   coroutine_init();
 
-
   if (co_tcp4_open(&tcp) == -1) {
     perror("co_tcp_open error");
     exit(-1);

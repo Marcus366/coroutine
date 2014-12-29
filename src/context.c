@@ -1,10 +1,12 @@
+#define __USE_GNU
+#include <sys/ucontext.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <ucontext.h>
 #include <sys/mman.h>
 #include "sched.h"
 #include "context.h"
 #include "coroutine.h"
+
 
 
 list_head  g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
@@ -33,6 +35,7 @@ coroutine_ctx_new(void(*func)(), void *arg)
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   ctx->ctx.uc_stack.ss_size = 8192000;
   ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
+  ctx->ctx.uc_mcontext.gregs[15] -= 6;
   makecontext(&ctx->ctx, func, 1, arg);
 
   return ctx;
@@ -86,6 +89,9 @@ coroutine_ctx_new_exit()
   makecontext(&ctx->ctx, (void(*)())coroutine_exit, 1, NULL);
 
   ctx->cid = 0;
+
+  ctx->queue.prev = NULL;
+  ctx->queue.next = NULL;
 #ifdef __DEBUG__
   printf("make exit coroutine cid: %llu\n", ctx->cid);
 #endif

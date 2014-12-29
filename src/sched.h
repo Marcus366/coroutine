@@ -18,7 +18,7 @@ extern coroutine_ctx_t *g_exit_coroutine_ctx;
 int coroutine_sched_init();
 
 
-int coroutine_register_fd(int fd, int fl);
+int coroutine_register_fd(int fd);
 int coroutine_unregister_fd(int fd);
 
 
