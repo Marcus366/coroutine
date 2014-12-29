@@ -19,6 +19,10 @@ int              g_pollfd;
 coroutine_ctx_t *g_exit_coroutine_ctx;
 
 
+extern void coroutine__sched_swap_context(ucontext_t *from, ucontext_t *to)
+  asm("_coroutine__sched_swap_context");
+
+
 int
 coroutine_sched_init() {
   int i;
@@ -188,10 +192,34 @@ do_sched:
 }
 
 
+asm (
+".text\n"
+"_coroutine__sched_swap_context:\n"
+"pushq %r12\n"
+"pushq %r13\n"
+"pushq %r14\n"
+"pushq %r15\n"
+"pushq %rbx\n"
+"pushq %rbp\n"
+
+"movq %rsp, 160(%rdi)\n"
+"movq 160(%rsi), %rsp\n"
+
+"popq %rbp\n"
+"popq %rbx\n"
+"popq %r15\n"
+"popq %r14\n"
+"popq %r13\n"
+"popq %r12\n"
+
+"ret\n"
+);
+
+
 void
 coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next)
 {
-  swapcontext(&cur->ctx, &next->ctx);
+  coroutine__sched_swap_context(&cur->ctx, &next->ctx);
 }
 
 

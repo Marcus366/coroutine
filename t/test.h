@@ -3,6 +3,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,10 +17,10 @@
   int test_##name(char *str);   \
   int test_##name(char *str)
 
-#define ASSERT(assert, log, str) \
+#define ASSERT(assert, log)      \
   if (!(assert)) {               \
-    sprintf(log, "%s", str);     \
-    return -1;                   \
+    sprintf(str, "%s", log);     \
+    exit(-1);                    \
   }
 
 typedef struct test_entry_s {
