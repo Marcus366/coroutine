@@ -31,7 +31,7 @@ void coroutine_init();
  * @return: a coroutine context if success, NULL if error.
  */
 coroutine_ctx_t* coroutine_create(const void *attr,
-    void*(*start_rtn)(void*), void *arg);
+    void(*start_rtn)(void*), void *arg);
 
 
 /**

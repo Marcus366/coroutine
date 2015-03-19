@@ -1,8 +1,9 @@
 #include "test.h"
 
 
-void* func(void *arg) {
-  return NULL;
+void func(void *arg) {
+  (void) arg;
+  return;
 }
 
 

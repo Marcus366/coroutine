@@ -19,8 +19,9 @@ int              g_pollfd;
 coroutine_ctx_t *g_exit_coroutine_ctx;
 
 
-extern void coroutine__sched_swap_context(ucontext_t *from, ucontext_t *to);
-  //asm("_coroutine__sched_swap_context");
+extern void __attribute__((noinline))
+coroutine__swap_context(void **from, void **to);
+  //asm("coroutine__swap_context");
 
 
 int
@@ -128,26 +129,26 @@ do_sched:
 #ifdef __DEBUG_SHOW_ALL_LIST__
   printf("list:\n");
   list_for_each_entry(cur, &g_coroutine_list, list) {
-    printf("%ld ", cur->cid);
+    printf("%llu ", cur->cid);
     switch (cur->flag) {
     case RUNNING:
       printf("running\n");
       if (!list_is_suspend(&cur->queue)) {
-        printf("state not consistent\n");
+        printf("state not consistent, running but in queue\n");
         exit(-1);
       }
       break;
     case BLOCKING:
       printf("blocking\n");
-      if (!list_is_suspend(&cur->queue)) {
-        printf("state not consistent\n");
+      if (list_is_suspend(&cur->queue)) {
+        printf("state not consistent blocking but not in queue\n");
         exit(-1);
       }
       break;
     case READY:
       printf("ready\n");
       if (cur->cid != g_exit_coroutine_ctx->cid && list_is_suspend(&ctx->queue)) {
-        printf("state not consistent\n");
+        printf("state not consistent ready but not in queue\n");
         exit(-1);
       }
       break;
@@ -160,13 +161,13 @@ do_sched:
 #ifdef __DEBUG_SHOW_READY_LIST__
   printf("ready list:\n");
   list_for_each_entry(cur, &g_coroutine_ready_list, queue) {
-    printf("%ld ", cur->cid);
+    printf("%llu ", cur->cid);
     switch (cur->flag) {
     case RUNNING:
-      printf("state not consistent\n");
+      printf("state not consistent running\n");
       exit(-1);
     case BLOCKING:
-      printf("state not consistent\n");
+      printf("state not consistent blocking\n");
       exit(-1);
     case READY:
       if (cur->cid == g_exit_coroutine_ctx->cid) {
@@ -191,40 +192,18 @@ do_sched:
     ctx->flag = RUNNING;
 
     coroutine_sched_swap_context(cur, ctx);
+  } else {
+    list_del(&cur->queue);
   }
 
   return;
 }
 
 
-asm (
-".text\n"
-"coroutine__sched_swap_context:\n"
-"pushq %r12\n"
-"pushq %r13\n"
-"pushq %r14\n"
-"pushq %r15\n"
-"pushq %rbx\n"
-"pushq %rbp\n"
-
-"movq %rsp, 160(%rdi)\n"
-"movq 160(%rsi), %rsp\n"
-
-"popq %rbp\n"
-"popq %rbx\n"
-"popq %r15\n"
-"popq %r14\n"
-"popq %r13\n"
-"popq %r12\n"
-
-"ret\n"
-);
-
-
 void
 coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next)
 {
-  coroutine__sched_swap_context(&cur->ctx, &next->ctx);
+  coroutine__swap_context(&cur->stack_pointer, &next->stack_pointer);
 }
 
 
@@ -244,8 +223,7 @@ coroutine_exit(void *arg)
 
     assert(list_is_suspend(&ctx->queue));
     list_del(&ctx->list);
-    munmap(ctx->ctx.uc_stack.ss_sp, ctx->ctx.uc_stack.ss_size);
-    free(ctx);
+    coroutine_ctx_free(ctx);
 
 #ifdef __DEBUG__
     printf("coroutine exit: %llu\n", ctx->cid);

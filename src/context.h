@@ -18,7 +18,11 @@ struct coroutine_ctx_s {
   unsigned long long  cid;
   coroutine_state_t   flag;
   coroutine_ctx_t    *parent;
-  ucontext_t          ctx;
+
+  /* stack message */
+  void          *stack_base;
+  void          *stack_pointer;
+  size_t         stack_size;
 
   /* coroutine list */
   list_head       list;

@@ -1,5 +1,3 @@
-#define __USE_GNU
-#include <sys/ucontext.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/mman.h>
@@ -7,10 +5,11 @@
 #include "context.h"
 #include "coroutine.h"
 
+#define DEFAULT_STACK_SIZE (8192 * 1024)
 
 
-list_head  g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
-list_head  g_coroutine_ready_list = LIST_HEAD_INIT(g_coroutine_ready_list);
+list_head g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
+list_head g_coroutine_ready_list = LIST_HEAD_INIT(g_coroutine_ready_list);
 
 coroutine_ctx_t *g_coroutine_running_ctx;
 
@@ -19,6 +18,7 @@ coroutine_ctx_t*
 coroutine_ctx_new(void(*func)(), void *arg)
 {
   static unsigned long long uuid = 2;
+  char *sp, *ebp;
   coroutine_ctx_t *ctx;
 
   ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
@@ -29,14 +29,33 @@ coroutine_ctx_new(void(*func)(), void *arg)
   ctx->cid = uuid++;
   ctx->flag = READY;
 
-  getcontext(&ctx->ctx);
   ctx->parent = g_coroutine_running_ctx;
-  ctx->ctx.uc_stack.ss_sp = (u_char*)mmap(NULL, 8192000,
+  ctx->stack_size = DEFAULT_STACK_SIZE;
+  ctx->stack_base = (u_char*)mmap(NULL, ctx->stack_size,
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-  ctx->ctx.uc_stack.ss_size = 8192000;
-  ctx->ctx.uc_link = &g_exit_coroutine_ctx->ctx;
-  ctx->ctx.uc_mcontext.gregs[15] -= 6;
-  makecontext(&ctx->ctx, func, 1, arg);
+
+  sp = (char*)ctx->stack_base + ctx->stack_size - 1;
+  sp = (char*)((unsigned long)sp & (-16L));
+
+  *(uintptr_t*)sp = (uintptr_t)0;
+  sp -= 8;
+  *(uintptr_t*)sp = (uintptr_t)coroutine_resume;
+  sp -= 16;
+
+  ebp = sp;
+  sp = (char*)sp - 80;
+  sp = (char*)((unsigned long)sp & (-16L));
+
+  sp -= 8;
+  *(uintptr_t*)sp = (uintptr_t)arg;
+  sp -= 8;
+  *(uintptr_t*)sp = (uintptr_t)func;
+
+  sp -= 8;
+  *(uintptr_t*)sp  = (uintptr_t)ebp;
+  sp -= 5 * 8;
+
+  ctx->stack_pointer = sp;
 
   return ctx;
 }
@@ -55,9 +74,8 @@ coroutine_ctx_new_main()
   ctx->cid = 1;
   ctx->flag = RUNNING;
 
-  getcontext(&ctx->ctx);
   ctx->parent = NULL;
-  ctx->ctx.uc_link= &g_exit_coroutine_ctx->ctx;
+  ctx->stack_base = 0;
 
   ctx->list.prev = NULL;
   ctx->list.next = NULL;
@@ -81,12 +99,24 @@ coroutine_ctx_new_exit()
 
   ctx->flag = READY;
 
-  getcontext(&ctx->ctx);
-  ctx->ctx.uc_stack.ss_sp = mmap(NULL, 8192000,
+  ctx->parent = g_coroutine_running_ctx;
+  ctx->stack_size = DEFAULT_STACK_SIZE;
+  ctx->stack_base = (u_char*)mmap(NULL, ctx->stack_size,
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-  ctx->ctx.uc_stack.ss_size = 8192000;
-  ctx->ctx.uc_link = NULL;
-  makecontext(&ctx->ctx, (void(*)())coroutine_exit, 1, NULL);
+  ctx->stack_pointer = ((char*)ctx->stack_base) + ctx->stack_size;
+  
+  ctx->stack_pointer -= 16;
+
+  *(uintptr_t*)ctx->stack_pointer = (uintptr_t)0;
+  ctx->stack_pointer--;
+
+  *(uintptr_t*)ctx->stack_pointer = (uintptr_t)coroutine_exit;
+  ctx->stack_pointer--;
+
+  ctx->stack_pointer -= 5;
+
+  *(uintptr_t*)ctx->stack_pointer = (uintptr_t)ctx->stack_pointer + 6;
+  ctx->stack_pointer--;
 
   ctx->cid = 0;
 
@@ -106,7 +136,7 @@ coroutine_ctx_free(coroutine_ctx_t *ctx)
   assert(list_is_suspend(&ctx->list));
   assert(list_is_suspend(&ctx->queue));
 
-  munmap(ctx->ctx.uc_stack.ss_sp, ctx->ctx.uc_stack.ss_size);
+  munmap(ctx->stack_base, ctx->stack_size);
   free(ctx);
 }
 

@@ -23,7 +23,7 @@ const char *out = "HTTP/1.1 200 OK\r\n"
     "Content-Length: 0\r\n"
     "\r\n";
 
-void* co_listen(void *arg)
+void co_listen(void *arg)
 {
   int i, n, fd, state;
   char buf[1024];
@@ -75,7 +75,7 @@ void* co_listen(void *arg)
     (void) close(fd);
   }
 
-  return NULL;
+  return ;
 }
 
 

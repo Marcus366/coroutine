@@ -6,7 +6,7 @@ static unsigned long long seq = 0;
 static int co1_run = 0;
 static int co2_run = 0;
 
-void *func1(void *str) {
+void func1(void *str) {
   int i;
 
   for (i = 0; i < 10; ++i) {
@@ -15,10 +15,10 @@ void *func1(void *str) {
     coroutine_resume(ctx[1]);
   }
 
-  return NULL;
+  return;
 }
 
-void *func2(void *str) {
+void func2(void *str) {
   int i;
 
   for (i = 0; i < 10; ++i) {
@@ -27,7 +27,7 @@ void *func2(void *str) {
     coroutine_resume(ctx[0]);
   }
 
-  return NULL;
+  return;
 }
 
 
