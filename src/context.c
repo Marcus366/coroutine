@@ -10,12 +10,25 @@
 
 list_head g_coroutine_list = LIST_HEAD_INIT(g_coroutine_list);
 list_head g_coroutine_ready_list = LIST_HEAD_INIT(g_coroutine_ready_list);
+list_head g_coroutine_zombie_list = LIST_HEAD_INIT(g_coroutine_zombie_list);
 
 coroutine_ctx_t *g_coroutine_running_ctx;
 
 
-void coroutine_exit_swap() {
-  coroutine_resume(g_exit_coroutine_ctx);
+static void
+coroutine_enter() {
+  coroutine_ctx_t *ctx, *next;
+
+  ctx = g_coroutine_running_ctx;
+  ctx->start_rtn(ctx->arg);
+
+  next = coroutine_sched_find_ready();
+  g_coroutine_running_ctx = next;
+
+  list_del(&next->queue);
+  next->flag = RUNNING;
+
+  coroutine_sched_swap_context(ctx, next);
 }
 
 
@@ -39,23 +52,15 @@ coroutine_ctx_new(void(*func)(), void *arg)
   ctx->stack_base = (u_char*)mmap(NULL, ctx->stack_size,
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
+  ctx->start_rtn = (void(*)(void*))func;
+  ctx->arg       = arg;
+
   sp = (char*)ctx->stack_base + ctx->stack_size - 1;
   sp = (char*)((unsigned long)sp & (-16L));
 
-  sp -= 8;
-  *(uintptr_t*)sp = (uintptr_t)0;
-  sp -= 8;
-  *(uintptr_t*)sp = (uintptr_t)coroutine_resume;
-  sp -= 16;
-
   ebp = sp;
-  sp = (char*)sp - 80;
-  sp = (char*)((unsigned long)sp & (-16L));
-
   sp -= 8;
-  *(uintptr_t*)sp = (uintptr_t)coroutine_exit_swap;
-  sp -= 8;
-  *(uintptr_t*)sp = (uintptr_t)func;
+  *(uintptr_t*)sp = (uintptr_t)coroutine_enter;
 
   sp -= 8;
   *(uintptr_t*)sp  = (uintptr_t)ebp;

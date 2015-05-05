@@ -92,40 +92,10 @@ coroutine_block(int fd, int type)
 void
 coroutine_sched()
 {
-  int i, fd, nfds;
   coroutine_ctx_t *ctx, *cur;
-  struct epoll_event event[10240];
 
-find_ready:
-  list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
-    if (ctx->flag == READY) {
-      goto do_sched;
-    }
-  }
+  ctx = coroutine_sched_find_ready();
 
-  nfds = epoll_wait(g_pollfd, event, 10240, -1);
-  for (i = 0; i < nfds; ++i) {
-    fd = (int)event[i].data.fd;
-    list_for_each_entry_safe(ctx, cur, &g_fds[fd].wq, queue) {
-      if (ctx->flag == BLOCKING) {
-        ctx->flag = READY;
-
-        list_del(&ctx->queue);
-        list_add_tail(&ctx->queue, &g_coroutine_ready_list);
-      }
-
-    }
-
-    if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
-      perror("epoll del error");
-      exit(-1);
-    }
-
-    assert(list_empty(&g_fds[fd].wq));
-  }
-  goto find_ready;
-
-do_sched:
 #ifdef __DEBUG_SHOW_ALL_LIST__
   printf("list:\n");
   list_for_each_entry(cur, &g_coroutine_list, list) {
@@ -197,6 +167,66 @@ do_sched:
   }
 
   return;
+}
+
+
+coroutine_ctx_t*
+coroutine_sched_find_ready()
+{
+  int i, fd, nfds;
+  coroutine_ctx_t *ctx, *cur;
+  struct epoll_event event[10240];
+
+  do {
+    list_for_each_entry(ctx, &g_coroutine_ready_list, queue) {
+      if (ctx->flag == READY) {
+        return ctx;
+      }
+    }
+
+    nfds = epoll_wait(g_pollfd, event, 10240, 0);
+    for (i = 0; i < nfds; ++i) {
+      fd = (int)event[i].data.fd;
+      list_for_each_entry_safe(ctx, cur, &g_fds[fd].wq, queue) {
+        if (ctx->flag == BLOCKING) {
+          ctx->flag = READY;
+
+          list_del(&ctx->queue);
+          list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+        }
+
+      }
+
+      if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
+        perror("epoll del error");
+        exit(-1);
+      }
+
+      assert(list_empty(&g_fds[fd].wq));
+    }
+
+    nfds = epoll_wait(g_pollfd, event, 10240, -1);
+    for (i = 0; i < nfds; ++i) {
+      fd = (int)event[i].data.fd;
+      list_for_each_entry_safe(ctx, cur, &g_fds[fd].wq, queue) {
+        if (ctx->flag == BLOCKING) {
+          ctx->flag = READY;
+
+          list_del(&ctx->queue);
+          list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+        }
+      }
+
+      if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
+        perror("epoll del error");
+        exit(-1);
+      }
+
+      assert(list_empty(&g_fds[fd].wq));
+    }
+  } while(1);
+
+  return ctx;
 }
 
 

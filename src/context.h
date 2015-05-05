@@ -9,7 +9,8 @@
 typedef enum coroutine_state_s {
   READY = 0,
   RUNNING,
-  BLOCKING
+  BLOCKING,
+  ZOMBIE
 } coroutine_state_t;
 
 
@@ -28,11 +29,15 @@ struct coroutine_ctx_s {
   list_head       list;
   /*   wait queue   */
   list_head       queue;
+
+  void (*start_rtn)(void*);
+  void *arg;
 };
 
 
 extern list_head  g_coroutine_list;
 extern list_head  g_coroutine_ready_list;
+extern list_head  g_coroutine_zombie_list;
 extern coroutine_ctx_t *g_coroutine_running_ctx;
 
 

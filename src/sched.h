@@ -26,6 +26,8 @@ void coroutine_block(int fd, int type);
 
 void coroutine_sched();
 
+coroutine_ctx_t* coroutine_sched_find_ready();
+
 
 void coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next);
 
