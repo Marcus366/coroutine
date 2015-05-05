@@ -2,6 +2,7 @@
 #define _LINUX_LIST_H
 
 #include <sys/types.h>
+#include <stdlib.h>
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE*)0)->MEMBER)

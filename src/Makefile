@@ -8,6 +8,7 @@ BUILD_PATH = ../objs/src
 
 SRCS = coroutine.c										\
 			 utils.c												\
+			 pool.c													\
 			 context.c											\
 			 swap_context.s									\
 			 sched.c												\
@@ -17,6 +18,7 @@ SRCS = coroutine.c										\
 
 OBJS = $(BUILD_PATH)/coroutine.o			\
 			 $(BUILD_PATH)/utils.o					\
+			 $(BUILD_PATH)/pool.o						\
 			 $(BUILD_PATH)/context.o				\
 			 $(BUILD_PATH)/swap_context.o		\
 			 $(BUILD_PATH)/sched.o					\
