@@ -14,6 +14,11 @@ list_head g_coroutine_ready_list = LIST_HEAD_INIT(g_coroutine_ready_list);
 coroutine_ctx_t *g_coroutine_running_ctx;
 
 
+void coroutine_exit_swap() {
+  coroutine_resume(g_exit_coroutine_ctx);
+}
+
+
 coroutine_ctx_t*
 coroutine_ctx_new(void(*func)(), void *arg)
 {
@@ -37,6 +42,7 @@ coroutine_ctx_new(void(*func)(), void *arg)
   sp = (char*)ctx->stack_base + ctx->stack_size - 1;
   sp = (char*)((unsigned long)sp & (-16L));
 
+  sp -= 8;
   *(uintptr_t*)sp = (uintptr_t)0;
   sp -= 8;
   *(uintptr_t*)sp = (uintptr_t)coroutine_resume;
@@ -47,13 +53,13 @@ coroutine_ctx_new(void(*func)(), void *arg)
   sp = (char*)((unsigned long)sp & (-16L));
 
   sp -= 8;
-  *(uintptr_t*)sp = (uintptr_t)arg;
+  *(uintptr_t*)sp = (uintptr_t)coroutine_exit_swap;
   sp -= 8;
   *(uintptr_t*)sp = (uintptr_t)func;
 
   sp -= 8;
   *(uintptr_t*)sp  = (uintptr_t)ebp;
-  sp -= 5 * 8;
+  sp -= 6 * 8;
 
   ctx->stack_pointer = sp;
 
@@ -77,11 +83,8 @@ coroutine_ctx_new_main()
   ctx->parent = NULL;
   ctx->stack_base = 0;
 
-  ctx->list.prev = NULL;
-  ctx->list.next = NULL;
-
-  ctx->queue.prev = NULL;
-  ctx->queue.next = NULL;
+  ctx->list.prev = ctx->list.next = NULL;
+  ctx->queue.prev = ctx->queue.next = NULL;
 
   return ctx;
 }
@@ -90,6 +93,7 @@ coroutine_ctx_new_main()
 coroutine_ctx_t*
 coroutine_ctx_new_exit()
 {
+  char *sp, *ebp;
   coroutine_ctx_t *ctx;
 
   ctx = (coroutine_ctx_t*)malloc(sizeof(coroutine_ctx_t));
@@ -103,8 +107,24 @@ coroutine_ctx_new_exit()
   ctx->stack_size = DEFAULT_STACK_SIZE;
   ctx->stack_base = (u_char*)mmap(NULL, ctx->stack_size,
         PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-  ctx->stack_pointer = ((char*)ctx->stack_base) + ctx->stack_size;
   
+  sp = (char*)ctx->stack_base + ctx->stack_size - 1;
+  sp = (char*)((unsigned long)sp & (-16L));
+
+
+  ebp = sp;
+  sp = (char*)sp - 80;
+  sp = (char*)((unsigned long)sp & (-16L));
+
+  sp -= 8;
+  *(uintptr_t*)sp = (uintptr_t)coroutine_exit;
+
+  sp -= 8;
+  *(uintptr_t*)sp  = (uintptr_t)ebp;
+  sp -= 6 * 8;
+
+  ctx->stack_pointer = sp;
+  /*
   ctx->stack_pointer -= 16;
 
   *(uintptr_t*)ctx->stack_pointer = (uintptr_t)0;
@@ -117,6 +137,7 @@ coroutine_ctx_new_exit()
 
   *(uintptr_t*)ctx->stack_pointer = (uintptr_t)ctx->stack_pointer + 6;
   ctx->stack_pointer--;
+  */
 
   ctx->cid = 0;
 

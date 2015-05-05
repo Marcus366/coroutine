@@ -9,7 +9,7 @@ BUILD_PATH = ../objs/src
 SRCS = coroutine.c										\
 			 utils.c												\
 			 context.c											\
-			 swap_context.c									\
+			 swap_context.s									\
 			 sched.c												\
 			 io.c														\
 			 pipe.c													\

@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <string.h>
 
 
 /* declare all the test */
@@ -19,18 +20,34 @@ static test_entry_t entries[] =
 #undef MARCOS
 
 
+ssize_t __write__(int fd, test_entry_t *entry);
+ssize_t __read__(int fd, test_entry_t *entry);
+
+
 int main()
 {
   pid_t pid;
-  int status, isPass = 1;
+  int fd[2], status, isPass = 1;
   test_entry_t *entry;
+
+  if (pipe(fd) == -1) {
+    perror("create pipe fail");
+    exit(EXIT_FAILURE);
+  }
 
   for (entry = entries; entry->func; ++entry) {
     if ((pid = fork()) == 0) {
-      return entry->func(entry->log);
+      entry->code = entry->func(entry->log);
+      if (entry->code) {
+        __write__(fd[0], entry);
+      }
+      return entry->code;
     } else if (pid > 0) {
       (void) waitpid(pid, &status, 0);
       entry->code = WEXITSTATUS(status);
+      if (entry->code) {
+        __read__(fd[0], entry);
+      }
     } else {
       perror("test program fail");
     }
@@ -52,4 +69,28 @@ int main()
   }
 
   return 0;
+}
+
+
+ssize_t __write__(int fd, test_entry_t *entry) {
+  ssize_t nbytes, nwrite = 0;;
+  size_t count = strlen(entry->log);
+
+  while ((nbytes = write(fd, entry->log, count - nwrite)) > 0) {
+    nwrite += nbytes;
+  }
+
+  return nwrite;
+}
+
+
+ssize_t __read__(int fd, test_entry_t *entry) {
+  ssize_t nbytes, nread = 0;;
+  size_t count = sizeof(entry->log);
+
+  while ((nbytes = read(fd, entry->log, count - nread)) > 0) {
+    nread += nbytes;
+  }
+
+  return nread;
 }
