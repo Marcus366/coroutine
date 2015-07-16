@@ -1,3 +1,3 @@
-MARCOS(coroutine_create)
-MARCOS(coroutine_resume)
+MARCOS(crt_create)
+MARCOS(crt_resume)
 MARCOS(tcp_open)

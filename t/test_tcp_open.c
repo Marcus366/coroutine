@@ -6,7 +6,7 @@ TEST_IMPL(tcp_open) {
   co_tcp_t tcp;
   struct sockaddr_in addr;
 
-  coroutine_init();
+  crt_init();
 
   ret = co_ip4_addr_init(&addr, "127.0.0.1", 8080);
   ASSERT(ret == 0, "co_ipv4_addr_init fail");

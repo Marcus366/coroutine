@@ -7,17 +7,17 @@
 int
 set_nonblocking(int fd)
 {
-  int fl;
+    int fl;
 
-  if ((fl = getfl(fd)) == -1) {
-    return -1;
-  }
+    if ((fl = getfl(fd)) == -1) {
+        return -1;
+    }
 
-  if (setfl(fd, fl | O_NONBLOCK) == -1) {
-    return -1;
-  }
+    if (setfl(fd, fl | O_NONBLOCK) == -1) {
+        return -1;
+    }
 
-  return 0;
+    return 0;
 }
 
 

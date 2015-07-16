@@ -7,29 +7,29 @@ void func(void *arg) {
 }
 
 
-TEST_IMPL(coroutine_create) {
-  coroutine_ctx_t *ctx;
+TEST_IMPL(crt_create) {
+  crt_ctx_t *ctx;
 
-  coroutine_init();
+  crt_init();
 
-  ctx = coroutine_create(NULL, func, NULL);
-  ASSERT(ctx != NULL, "create coroutine fail");
+  ctx = crt_create(NULL, func, NULL);
+  ASSERT(ctx != NULL, "create crt fail");
   ASSERT(ctx->cid == 2, "cid not match");
 
-  coroutine_resume(ctx);
+  crt_resume(ctx);
 
-  ctx = coroutine_create(NULL, func, NULL);
-  ASSERT(ctx != NULL, "create coroutine fail");
+  ctx = crt_create(NULL, func, NULL);
+  ASSERT(ctx != NULL, "create crt fail");
   ASSERT(ctx->cid == 3, "cid not match");
 
-  coroutine_resume(ctx);
+  crt_resume(ctx);
 
-  ctx = coroutine_create(NULL, func, NULL);
-  ASSERT(ctx != NULL, "create coroutine fail");
+  ctx = crt_create(NULL, func, NULL);
+  ASSERT(ctx != NULL, "create crt fail");
   ASSERT(ctx->cid == 4, "cid not match");
 
-  ctx = coroutine_create(NULL, func, NULL);
-  ASSERT(ctx != NULL, "create coroutine fail");
+  ctx = crt_create(NULL, func, NULL);
+  ASSERT(ctx != NULL, "create crt fail");
   ASSERT(ctx->cid == 5, "cid not match");
 
   return 0;

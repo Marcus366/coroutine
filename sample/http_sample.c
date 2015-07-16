@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include "../src/coroutine.h"
+#include "../src/crt.h"
 
 
 #define IGN      0
@@ -84,7 +84,7 @@ int main()
   co_tcp_t tcp;
   struct sockaddr_in addr;
 
-  coroutine_init();
+  crt_init();
 
   if (co_tcp4_open(&tcp) == -1) {
     perror("co_tcp_open error");
@@ -121,8 +121,8 @@ int main()
       return 0;
     }
 
-    if (coroutine_create(NULL, co_listen, (void*)connfd) == NULL) {
-      printf("coroutine_create error");
+    if (crt_create(NULL, co_listen, (void*)connfd) == NULL) {
+      printf("crt_create error");
       exit(-1);
     }
   }

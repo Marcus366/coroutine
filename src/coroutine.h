@@ -9,52 +9,52 @@
 #include "co_structre.h"
 
 
-/**************     coroutine interface     *********************/
+/**************     crt interface     *********************/
 
 
 /**
- * Initialize the coroutine library.
+ * Initialize the crt library.
  *
- * It must be called before other functions in coroutine library.
+ * It must be called before other functions in crt library.
  * Otherwise, the program will crash with unknown error.
  */
-void coroutine_init();
+void crt_init();
 
 
 /**
- * Create a new coroutine but not yet run it.
+ * Create a new crt but not yet run it.
  *
- * @param attr: attributes of coroutine (have no meaning at present).
- * @param start_rtn: function pointer run by coroutine once started.
+ * @param attr: attributes of crt (have no meaning at present).
+ * @param start_rtn: function pointer run by crt once started.
  * @param arg:  argument of start_rtn.
  *
- * @return: a coroutine context if success, NULL if error.
+ * @return: a crt context if success, NULL if error.
  */
-coroutine_ctx_t* coroutine_create(const void *attr,
+crt_ctx_t* crt_create(const void *attr,
     void(*start_rtn)(void*), void *arg);
 
 
 /**
- * Run a coroutine with given coroutine context.
+ * Run a crt with given crt context.
  * The caller routine will be suspended at once.
  *
- * @param ctx: context of coroutine which you want to run now.
+ * @param ctx: context of crt which you want to run now.
  */
-void coroutine_resume(coroutine_ctx_t *ctx);
+void crt_resume(crt_ctx_t *ctx);
 
 
 /**
- * Pause the current coroutine and schedule to anyone if ready.
+ * Pause the current crt and schedule to anyone if ready.
  */
-void coroutine_yield();
+void crt_yield();
 
 
 /**
- * Return the current running coroutine context.
+ * Return the current running crt context.
  *
- * @return: context related to current coroutine.
+ * @return: context related to current crt.
  */
-coroutine_ctx_t* coroutine_running();
+crt_ctx_t* crt_running();
 
 
 /**************     co_operation interface     *********************/

@@ -2,36 +2,36 @@
 #define __SCHED_H__
 
 
-#include "coroutine.h"
+#include "crt.h"
 #include "context.h"
 
 
 typedef struct fdstat {
-  list_head wq;
+    list_head wq;
 } fdstat_t;
 
 
 extern fdstat_t        *g_fds;
-extern coroutine_ctx_t *g_exit_coroutine_ctx;
+extern crt_ctx_t *g_exit_crt_ctx;
 
 
-int coroutine_sched_init();
+int crt_sched_init();
 
 
-int coroutine_register_fd(int fd);
-int coroutine_unregister_fd(int fd);
+int crt_register_fd(int fd);
+int crt_unregister_fd(int fd);
 
 
-void coroutine_block(int fd, int type);
+void crt_block(int fd, int type);
 
-void coroutine_sched();
+void crt_sched();
 
-coroutine_ctx_t* coroutine_sched_find_ready();
+crt_ctx_t* crt_sched_find_ready();
 
 
-void coroutine_sched_swap_context(coroutine_ctx_t *cur, coroutine_ctx_t *next);
+void crt_sched_swap_context(crt_ctx_t *cur, crt_ctx_t *next);
 
-void* coroutine_exit(void *arg);
+void* crt_exit(void *arg);
 
 
 #endif

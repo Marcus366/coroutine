@@ -7,92 +7,92 @@
 #include "sched.h"
 #include "config.h"
 #include "context.h"
-#include "coroutine.h"
+#include "crt.h"
 
 
 void
-coroutine_init()
+crt_init()
 {
-  coroutine_ctx_t *ctx;
+    crt_ctx_t *ctx;
 
-  coroutine_sched_init();
+    crt_sched_init();
 
-  /* init main coroutin */
-  ctx = coroutine_ctx_new_main();
-  list_add(&ctx->list, &g_coroutine_list);
+    /* init main crt */
+    ctx = crt_ctx_new_main();
+    list_add(&ctx->list, &g_crt_list);
 
-  g_coroutine_running_ctx = ctx;
+    g_crt_running_ctx = ctx;
 }
 
 
-coroutine_ctx_t*
-coroutine_create(const void *attr,
-  void(*start_rtn)(void*), void *arg)
+crt_ctx_t*
+crt_create(const void *attr,
+        void(*start_rtn)(void*), void *arg)
 {
-  coroutine_ctx_t *ctx;
+    crt_ctx_t *ctx;
 
-  /* TODO:
-   * corutine attribute.
-   */
-  (void)attr;
+    /* TODO:
+     * corutine attribute.
+     */
+    (void)attr;
 
-  ctx = coroutine_ctx_new((void(*)())start_rtn, arg);
+    ctx = crt_ctx_new((void(*)())start_rtn, arg);
 
-  /* add to coroutine list */
-  list_add(&ctx->list, &g_coroutine_list);
-  /* add to ready queue */
-  list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+    /* add to crt list */
+    list_add(&ctx->list, &g_crt_list);
+    /* add to ready queue */
+    list_add_tail(&ctx->queue, &g_crt_ready_list);
 
 
 #ifdef __DEBUG__
-  printf("make coroutine cid: %llu\n", ctx->cid);
+    printf("make crt cid: %llu\n", ctx->cid);
 #endif
 
-  return ctx;
+    return ctx;
 }
 
 
 void
-coroutine_resume(coroutine_ctx_t *ctx)
+crt_resume(crt_ctx_t *ctx)
 {
-  coroutine_ctx_t *cur = g_coroutine_running_ctx;
+    crt_ctx_t *cur = g_crt_running_ctx;
 
-  cur->flag = READY;
-  ctx->flag = RUNNING;
-  g_coroutine_running_ctx = ctx;
+    cur->flag = READY;
+    ctx->flag = RUNNING;
+    g_crt_running_ctx = ctx;
 
-  list_add_tail(&cur->queue, &g_coroutine_ready_list);
+    list_add_tail(&cur->queue, &g_crt_ready_list);
 
-  /* if the next coroutine is in ready list, remove it */
-  if (!list_is_suspend(&ctx->queue)) {
-    list_del(&ctx->queue);
-  }
+    /* if the next crt is in ready list, remove it */
+    if (!list_is_suspend(&ctx->queue)) {
+        list_del(&ctx->queue);
+    }
 
 #ifdef __DEBUG__
-  printf("resume coroutine cid: %llu\n", ctx->cid);
+    printf("resume crt cid: %llu\n", ctx->cid);
 #endif
 
-  coroutine_sched_swap_context(cur, ctx);
+    crt_sched_swap_context(cur, ctx);
 }
 
 
 void
-coroutine_yield()
+crt_yield()
 {
-  coroutine_ctx_t *ctx;
+    crt_ctx_t *ctx;
 
-  ctx = g_coroutine_running_ctx;
+    ctx = g_crt_running_ctx;
 
-  ctx->flag = READY;
-  list_add_tail(&ctx->queue, &g_coroutine_ready_list);
+    ctx->flag = READY;
+    list_add_tail(&ctx->queue, &g_crt_ready_list);
 
-  coroutine_sched();
+    crt_sched();
 }
 
 
-coroutine_ctx_t*
-coroutine_running()
+crt_ctx_t*
+crt_running()
 {
-  return g_coroutine_running_ctx;
+    return g_crt_running_ctx;
 }
 
