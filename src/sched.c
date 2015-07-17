@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <inttypes.h>
 #include <sys/epoll.h>
 #include <sys/resource.h>
 #include <sys/mman.h>
@@ -46,7 +47,7 @@ crt_sched_init() {
         INIT_LIST_HEAD(&g_fds[i].wq);
     }
 
-    if ((g_pollfd = epoll_create(10240)) == -1) {
+    if ((g_pollfd = epoll_create1(EPOLL_CLOEXEC)) == -1) {
         return -1;
     }
 
@@ -99,7 +100,7 @@ crt_sched()
 #ifdef __DEBUG_SHOW_ALL_LIST__
     printf("list:\n");
     list_for_each_entry(cur, &g_crt_list, list) {
-        printf("%llu ", cur->cid);
+        printf("%" PRIu64 " ", cur->cid);
         switch (cur->flag) {
             case RUNNING:
                 printf("running\n");
@@ -131,7 +132,7 @@ crt_sched()
 #ifdef __DEBUG_SHOW_READY_LIST__
     printf("ready list:\n");
     list_for_each_entry(cur, &g_crt_ready_list, queue) {
-        printf("%llu ", cur->cid);
+        printf("%" PRIu64 " ", cur->cid);
         switch (cur->flag) {
             case RUNNING:
                 printf("state not consistent running\n");
@@ -145,13 +146,15 @@ crt_sched()
                     exit(-1);
                 }
                 break;
+            default:
+                break;
         }
     }
     printf("\n");
 #endif
 
 #ifdef __DEBUG__
-    printf("sched crt cid: %llu\n", ctx->cid);
+    printf("sched crt cid: %" PRIu64 "\n", ctx->cid);
 #endif
 
     cur = g_crt_running_ctx;
@@ -233,7 +236,7 @@ crt_sched_find_ready()
 void
 crt_sched_swap_context(crt_ctx_t *cur, crt_ctx_t *next)
 {
-    crt__swap_context(&cur->stack_pointer, &next->stack_pointer);
+    crt__swap_context(&cur->stack.pointer, &next->stack.pointer);
 }
 
 
@@ -256,7 +259,7 @@ crt_exit(void *arg)
         crt_ctx_free(ctx);
 
 #ifdef __DEBUG__
-        printf("crt exit: %llu\n", ctx->cid);
+        printf("crt exit: %" PRIu64 "\n", ctx->cid);
 #endif
 
         if (pctx != NULL /* && pctx->flag == READY */) {

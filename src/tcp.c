@@ -7,7 +7,6 @@
 #include <errno.h>
 
 #include "sched.h"
-#include "co_structre.h"
 
 
 int

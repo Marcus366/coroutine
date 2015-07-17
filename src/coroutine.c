@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <sys/mman.h>
 
 #include "list.h"
 #include "sched.h"
 #include "config.h"
 #include "context.h"
-#include "crt.h"
+#include "coroutine.h"
 
 
 void
@@ -45,7 +46,7 @@ crt_create(const void *attr,
 
 
 #ifdef __DEBUG__
-    printf("make crt cid: %llu\n", ctx->cid);
+    printf("make crt cid: %" PRIu64 "\n", ctx->cid);
 #endif
 
     return ctx;
@@ -69,7 +70,7 @@ crt_resume(crt_ctx_t *ctx)
     }
 
 #ifdef __DEBUG__
-    printf("resume crt cid: %llu\n", ctx->cid);
+    printf("resume crt cid: %" PRIu64 "\n", ctx->cid);
 #endif
 
     crt_sched_swap_context(cur, ctx);

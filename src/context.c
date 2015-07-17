@@ -1,11 +1,10 @@
 #include <stdlib.h>
 #include <assert.h>
+
 #include <sys/mman.h>
 #include "sched.h"
 #include "context.h"
-#include "crt.h"
-
-#define DEFAULT_STACK_SIZE (8192 * 1024)
+#include "coroutine.h"
 
 
 list_head g_crt_list = LIST_HEAD_INIT(g_crt_list);
@@ -15,12 +14,12 @@ list_head g_crt_zombie_list = LIST_HEAD_INIT(g_crt_zombie_list);
 crt_ctx_t *g_crt_running_ctx;
 
 
-static void
+void
 crt_enter() {
     crt_ctx_t *ctx, *next;
 
     ctx = g_crt_running_ctx;
-    ctx->start_rtn(ctx->ag);
+    ctx->func(ctx->arg);
 
     /* running */
 
@@ -35,10 +34,9 @@ crt_enter() {
 
 
 crt_ctx_t*
-crt_ctx_new(void(*func)(), void *arg)
+crt_ctx_new(void(*func)(void*), void *arg)
 {
     static unsigned long long uuid = 2;
-    char *sp, *ebp;
     crt_ctx_t *ctx;
 
     ctx = (crt_ctx_t*)malloc(sizeof(crt_ctx_t));
@@ -49,26 +47,11 @@ crt_ctx_new(void(*func)(), void *arg)
     ctx->cid = uuid++;
     ctx->flag = READY;
 
+    ctx->func = func;
+    ctx->arg = arg;
+
     ctx->parent = g_crt_running_ctx;
-    ctx->stack_size = DEFAULT_STACK_SIZE;
-    ctx->stack_base = (u_char*)mmap(NULL, ctx->stack_size,
-        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-
-    ctx->start_rtn = (void(*)(void*))func;
-    ctx->arg       = arg;
-
-    sp = (char*)ctx->stack_base + ctx->stack_size - 1;
-    sp = (char*)((unsigned long)sp & (-16L));
-
-    ebp = sp;
-    sp -= 8;
-    *(uintptr_t*)sp = (uintptr_t)crt_enter;
-
-    sp -= 8;
-    *(uintptr_t*)sp  = (uintptr_t)ebp;
-    sp -= 6 * 8;
-
-    ctx->stack_pointer = sp;
+    ctx->stack  = crt_get_stack();
 
     return ctx;
 }
@@ -88,7 +71,8 @@ crt_ctx_new_main()
     ctx->flag = RUNNING;
 
     ctx->parent = NULL;
-    ctx->stack_base = 0;
+    ctx->stack.base = 0;
+    ctx->stack.size = 0;
 
     ctx->list.prev = ctx->list.next = NULL;
     ctx->queue.prev = ctx->queue.next = NULL;
@@ -100,8 +84,9 @@ crt_ctx_new_main()
 crt_ctx_t*
 crt_ctx_new_exit()
 {
-      char *sp, *ebp;
-      crt_ctx_t *ctx;
+    /*
+    char *sp, *ebp;
+    crt_ctx_t *ctx;
 
     ctx = (crt_ctx_t*)malloc(sizeof(crt_ctx_t));
     if (ctx == NULL) {
@@ -131,20 +116,6 @@ crt_ctx_new_exit()
     sp -= 6 * 8;
 
     ctx->stack_pointer = sp;
-  /*
-     ctx->stack_pointer -= 16;
-
-   *(uintptr_t*)ctx->stack_pointer = (uintptr_t)0;
-   ctx->stack_pointer--;
-
-   *(uintptr_t*)ctx->stack_pointer = (uintptr_t)crt_exit;
-   ctx->stack_pointer--;
-
-   ctx->stack_pointer -= 5;
-
-   *(uintptr_t*)ctx->stack_pointer = (uintptr_t)ctx->stack_pointer + 6;
-   ctx->stack_pointer--;
-   */
 
     ctx->cid = 0;
 
@@ -155,6 +126,9 @@ crt_ctx_new_exit()
 #endif
 
     return ctx;
+    */
+
+    return NULL;
 }
 
 
@@ -164,7 +138,8 @@ crt_ctx_free(crt_ctx_t *ctx)
     assert(list_is_suspend(&ctx->list));
     assert(list_is_suspend(&ctx->queue));
 
-    munmap(ctx->stack_base, ctx->stack_size);
+    crt_put_stack(ctx->stack);
+    /* TODO: use pool to manage crt_ctx_t */
     free(ctx);
 }
 

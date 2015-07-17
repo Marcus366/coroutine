@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "context.h"
-#include "co_structre.h"
 
 
 /**************     crt interface     *********************/
@@ -60,9 +59,6 @@ crt_ctx_t* crt_running();
 /**************     co_operation interface     *********************/
 
 
-typedef struct co_tcp_s co_tcp_t;
-
-
 /**
  * Initialize a ip version4 address structure.
  *
@@ -85,6 +81,7 @@ ssize_t co_sendmsg(int sockfd, const struct msghdr *msg, int flags);
 
 
 /* tcp interface */
+/*
 int co_tcp4_open(co_tcp_t *tcp);
 int co_tcp6_open(co_tcp_t *tcp);
 
@@ -96,6 +93,7 @@ int co_tcp_connect(co_tcp_t *tcp, struct sockaddr *addr);
 
 ssize_t co_tcp_read(co_tcp_t *tcp, void *buf, size_t count);
 ssize_t co_tcp_write(co_tcp_t *tcp, const void *buf, size_t count);
+*/
 
 
 /* file interface */
