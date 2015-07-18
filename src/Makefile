@@ -14,8 +14,8 @@ SRCS = coroutine.c				\
 			 swap_context.s		\
 			 sched.c			\
 			 io.c				\
-			 pipe.c				
-#			 tcp.c
+			 pipe.c				\
+			 tcp.c
 
 OBJS = $(BUILD_PATH)/coroutine.o				\
 			 $(BUILD_PATH)/utils.o				\
@@ -25,8 +25,8 @@ OBJS = $(BUILD_PATH)/coroutine.o				\
 			 $(BUILD_PATH)/swap_context.o		\
 			 $(BUILD_PATH)/sched.o				\
 			 $(BUILD_PATH)/io.o					\
-			 $(BUILD_PATH)/pipe.o				
-#			 $(BUILD_PATH)/tcp.o
+			 $(BUILD_PATH)/pipe.o				\
+			 $(BUILD_PATH)/tcp.o
 
 
 $(BUILD_PATH)/%.o: %.c config.h

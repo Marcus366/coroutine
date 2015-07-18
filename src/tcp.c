@@ -34,34 +34,68 @@ co_ip6_addr_init(struct sockaddr_in6 *addr, const char *ip, unsigned short port)
 
 
 int
-co_tcp4_open(co_tcp_t *tcp)
+co_tcp4_open()
 {
-    if ((tcp->socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)) == -1) {
+    int fd;
+
+    if ((fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)) == -1) {
         return -1;
     }
 
-    return 0;
+    return fd;
 }
 
 
 int
-co_tcp6_open(co_tcp_t *tcp)
+co_tcp6_open()
 {
-    if ((tcp->socket = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0)) == -1) {
+    int fd;
+
+    if ((fd = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0)) == -1) {
         return -1;
     }
 
-    return 0;
+    return fd;
+}
+
+int
+co_tcp4_open_bind(const char *ip, int port)
+{
+    int fd;
+    struct sockaddr_in addr;
+
+    fd = co_tcp4_open();
+    if (fd == -1) {
+        return -1;
+    }
+
+    if (co_ip4_addr_init(&addr, ip, port) != -1) {
+        return -1;
+    }
+
+    if (co_tcp_bind(fd, (struct sockaddr*)&addr) != -1) {
+        return -1;
+    }
+
+    return fd;
 }
 
 
 int
-co_tcp_bind(co_tcp_t *tcp, const struct sockaddr *addr)
+co_tcp6_open_bind(const char *ip, int port)
+{
+    /* TODO */
+    return -1;
+}
+
+
+int
+co_tcp_bind(int fd, const struct sockaddr *addr)
 {
     if (addr->sa_family == AF_INET) {
-        return bind(tcp->socket, addr, sizeof(struct sockaddr_in));
+        return bind(fd, addr, sizeof(struct sockaddr_in));
     } else if (addr->sa_family == AF_INET6) {
-        return bind(tcp->socket, addr, sizeof(struct sockaddr_in6));
+        return bind(fd, addr, sizeof(struct sockaddr_in6));
     }
 
     return -1;
@@ -69,23 +103,23 @@ co_tcp_bind(co_tcp_t *tcp, const struct sockaddr *addr)
 
 
 int
-co_tcp_listen(co_tcp_t *tcp, int backlog)
+co_tcp_listen(int fd, int backlog)
 {
-    return listen(tcp->socket, backlog);
+    return listen(fd, backlog);
 }
 
 
 int
-co_tcp_accept(co_tcp_t *tcp, struct sockaddr *addr, socklen_t *len)
+co_tcp_accept(int fd, struct sockaddr *addr, socklen_t *len)
 {
     int connfd;
 
 loop:
-    if ((connfd = accept(tcp->socket, addr, len)) == -1) {
+    if ((connfd = accept(fd, addr, len)) == -1) {
         if (errno == EINTR) {
             goto loop;
         } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            crt_block(tcp->socket, EPOLLIN);
+            crt_block(fd, EPOLLIN);
             goto loop;
         } else {
             connfd = -1;
@@ -101,12 +135,12 @@ loop:
 
 
 int
-co_tcp_connect(co_tcp_t *tcp, struct sockaddr *addr)
+co_tcp_connect(int fd, struct sockaddr *addr)
 {
     if (addr->sa_family == AF_INET) {
-        return connect(tcp->socket, addr, sizeof(struct sockaddr_in));
+        return connect(fd, addr, sizeof(struct sockaddr_in));
     } else if (addr->sa_family == AF_INET6) {
-        return connect(tcp->socket, addr, sizeof(struct sockaddr_in6));
+        return connect(fd, addr, sizeof(struct sockaddr_in6));
     }
 
     return -1;
@@ -114,15 +148,15 @@ co_tcp_connect(co_tcp_t *tcp, struct sockaddr *addr)
 
 
 ssize_t
-co_tcp_read(co_tcp_t *tcp, void *buf, size_t count)
+co_tcp_read(int fd, void *buf, size_t count)
 {
-    return co_read(tcp->socket, buf, count);
+    return co_read(fd, buf, count);
 }
 
 
 ssize_t
-co_tcp_write(co_tcp_t *tcp, const void *buf, size_t count)
+co_tcp_write(int fd, const void *buf, size_t count)
 {
-    return co_write(tcp->socket, buf, count);
+    return co_write(fd, buf, count);
 }
 

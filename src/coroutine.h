@@ -81,19 +81,19 @@ ssize_t co_sendmsg(int sockfd, const struct msghdr *msg, int flags);
 
 
 /* tcp interface */
-/*
-int co_tcp4_open(co_tcp_t *tcp);
-int co_tcp6_open(co_tcp_t *tcp);
+int co_tcp4_open();
+int co_tcp6_open();
+int co_tcp4_open_bind(const char *ip, int port);
+int co_tcp6_open_bind(const char *ip, int port);
 
-int co_tcp_bind(co_tcp_t *tcp, const struct sockaddr *addr);
-int co_tcp_listen(co_tcp_t *tcp, int backlog);
-int co_tcp_accept(co_tcp_t *tcp, struct sockaddr *addr, socklen_t *len);
+int co_tcp_bind(int fd, const struct sockaddr *addr);
+int co_tcp_listen(int fd, int backlog);
+int co_tcp_accept(int fd, struct sockaddr *addr, socklen_t *len);
 
-int co_tcp_connect(co_tcp_t *tcp, struct sockaddr *addr);
+int co_tcp_connect(int fd, struct sockaddr *addr);
 
-ssize_t co_tcp_read(co_tcp_t *tcp, void *buf, size_t count);
-ssize_t co_tcp_write(co_tcp_t *tcp, const void *buf, size_t count);
-*/
+ssize_t co_tcp_read(int fd, void *buf, size_t count);
+ssize_t co_tcp_write(int fd, const void *buf, size_t count);
 
 
 /* file interface */
