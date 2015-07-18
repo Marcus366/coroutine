@@ -8,6 +8,7 @@
 #include <sys/resource.h>
 #include <sys/mman.h>
 
+#include "log.h"
 #include "list.h"
 #include "utils.h"
 #include "sched.h"
@@ -99,55 +100,8 @@ crt_sched()
 
     ctx = crt_sched_find_ready();
 
-#ifdef __DEBUG_SHOW_ALL_LIST__
-    printf("list:\n");
-    list_for_each_entry(cur, &g_crt_list, list) {
-        printf("%" PRIu64 " ", cur->cid);
-        switch (cur->flag) {
-            case RUNNING:
-                printf("running\n");
-                if (!list_is_suspend(&cur->queue)) {
-                    printf("state not consistent, running but in queue\n");
-                    exit(-1);
-                }
-                break;
-            case BLOCKING:
-                printf("blocking\n");
-                if (list_is_suspend(&cur->queue)) {
-                    printf("state not consistent blocking but not in queue\n");
-                    exit(-1);
-                }
-                break;
-            case READY:
-                printf("ready\n");
-                if (list_is_suspend(&ctx->queue)) {
-                    printf("state not consistent ready but not in queue\n");
-                    exit(-1);
-                }
-                break;
-            default:
-                printf("\n");
-        }
-    }
-#endif
-
-#ifdef __DEBUG_SHOW_READY_LIST__
-    printf("ready list:\n");
-    list_for_each_entry(cur, &g_crt_ready_list, queue) {
-        printf("%" PRIu64 " ", cur->cid);
-        switch (cur->flag) {
-            case RUNNING:
-                printf("state not consistent running\n");
-                exit(-1);
-            case BLOCKING:
-                printf("state not consistent blocking\n");
-                exit(-1);
-            default:
-                break;
-        }
-    }
-    printf("\n");
-#endif
+    CRT_LOG_LIST();
+    CRT_LOG_READY_LIST();
 
 #ifdef __DEBUG__
     printf("sched crt cid: %" PRIu64 "\n", ctx->cid);

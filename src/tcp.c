@@ -69,6 +69,7 @@ co_tcp6_open()
     return fd;
 }
 
+
 int
 co_tcp4_open_bind(const char *ip, int port)
 {
