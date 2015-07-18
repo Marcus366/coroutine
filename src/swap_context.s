@@ -4,9 +4,9 @@
 # 1 "<command-line>" 2
 # 1 "swap_context.S"
 .text
-.globl coroutine__swap_context
-.type coroutine__swap_context, @function
-coroutine__swap_context:
+.globl crt__swap_context
+.type crt__swap_context, @function
+crt__swap_context:
   pushq %rax
   pushq %rbp
   pushq %rbx
