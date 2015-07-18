@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include "sched.h"
+#include "utils.h"
 
 
 int
@@ -17,7 +18,12 @@ co_ip4_addr_init(struct sockaddr_in *addr, const char *ip, unsigned short port)
     addr->sin_family = AF_INET;
     addr->sin_port = htons(port);
 
-    return inet_pton(AF_INET, ip, &addr->sin_addr);
+    if (ip != NULL) {
+        return inet_pton(AF_INET, ip, &addr->sin_addr);
+    }
+
+    addr->sin_addr.s_addr = htonl(INADDR_ANY);
+    return 0;
 }
 
 
@@ -40,6 +46,11 @@ co_tcp4_open()
 
     if ((fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)) == -1) {
         return -1;
+    }
+
+    if (set_nonblocking(fd)) {
+        close(fd);
+        fd = -1;
     }
 
     return fd;
@@ -69,11 +80,11 @@ co_tcp4_open_bind(const char *ip, int port)
         return -1;
     }
 
-    if (co_ip4_addr_init(&addr, ip, port) != -1) {
+    if (co_ip4_addr_init(&addr, ip, port)) {
         return -1;
     }
 
-    if (co_tcp_bind(fd, (struct sockaddr*)&addr) != -1) {
+    if (co_tcp_bind(fd, (struct sockaddr*)&addr)) {
         return -1;
     }
 
@@ -127,7 +138,11 @@ loop:
     }
 
     if (connfd != -1) {
-        crt_register_fd(connfd);
+        if (set_nonblocking(connfd)) {
+            close(connfd);
+            return -1;
+        }
+        //crt_register_fd(connfd);
     }
 
     return connfd;

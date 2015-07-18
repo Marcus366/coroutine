@@ -37,7 +37,7 @@ crt_create(const void *attr,
      */
     (void)attr;
 
-    ctx = crt_ctx_new((void(*)())start_rtn, arg);
+    ctx = crt_ctx_new(start_rtn, arg);
 
     /* add to crt list */
     list_add(&ctx->list, &g_crt_list);

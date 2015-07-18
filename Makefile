@@ -1,6 +1,6 @@
 .PHONY: all libco test sample clean
 
-all: libco
+all: libco sample
 
 
 libco:

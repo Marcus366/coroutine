@@ -30,15 +30,17 @@ crt_sched_init() {
     int i;
     struct rlimit rlim;
 
+    /*
     if ((g_exit_crt_ctx = crt_ctx_new_exit()) == NULL) {
         return -1;
     }
+    */
 
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
         return -1;
     }
 
-    g_fds = (fdstat_t*)malloc(sizeof(fdstat_t) * rlim.rlim_max);
+    g_fds = (fdstat_t*)calloc(sizeof(fdstat_t), rlim.rlim_max);
     if (g_fds == NULL) {
         return -1;
     }
@@ -118,7 +120,7 @@ crt_sched()
                 break;
             case READY:
                 printf("ready\n");
-                if (cur->cid != g_exit_crt_ctx->cid && list_is_suspend(&ctx->queue)) {
+                if (list_is_suspend(&ctx->queue)) {
                     printf("state not consistent ready but not in queue\n");
                     exit(-1);
                 }
@@ -140,12 +142,6 @@ crt_sched()
             case BLOCKING:
                 printf("state not consistent blocking\n");
                 exit(-1);
-            case READY:
-                if (cur->cid == g_exit_crt_ctx->cid) {
-                    printf("state not consistent\n");
-                    exit(-1);
-                }
-                break;
             default:
                 break;
         }
@@ -197,7 +193,6 @@ crt_sched_find_ready()
                     list_del(&ctx->queue);
                     list_add_tail(&ctx->queue, &g_crt_ready_list);
                 }
-
             }
 
             if (epoll_ctl(g_pollfd, EPOLL_CTL_DEL, fd, event) == -1) {
@@ -206,6 +201,10 @@ crt_sched_find_ready()
             }
 
             assert(list_empty(&g_fds[fd].wq));
+        }
+
+        if (!list_empty(&g_crt_ready_list)) {
+            continue;
         }
 
         nfds = epoll_wait(g_pollfd, event, 10240, -1);

@@ -73,6 +73,7 @@ crt_ctx_new_main()
     ctx->parent = NULL;
     ctx->stack.base = 0;
     ctx->stack.size = 0;
+    ctx->stack.main = 1;
 
     ctx->list.prev = ctx->list.next = NULL;
     ctx->queue.prev = ctx->queue.next = NULL;
