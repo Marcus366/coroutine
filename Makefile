@@ -2,21 +2,16 @@
 
 all: libco sample
 
+libco: $(SRC_OUT_DIR)
+	$(MAKE) -f src/Makefile
 
-libco:
-	mkdir -p objs/src
-	(cd src && make)
-
-#test: libco
-#	mkdir -p objs/test
+#test: libco $(TEST_OUT_DIR)
 #	(cd t && make)
 
-#runtest:
-#	./objs/test/test
-
-sample: libco
-	mkdir -p objs/sample
-	(cd sample && make)
+sample: libco $(SAMPLE_OUT_DIR)
+	$(MAKE) -f src/sample
 
 clean:
-	rm -rf objs/
+	@rm -rf objs/
+	@echo CLEAN DONE
+

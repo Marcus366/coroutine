@@ -4,6 +4,7 @@ CFLAGS =-Wall -g -pg
 AR =ar
 ARFLAGS =rcs
 
+MAKEDIR =mkdir -p
 BUILD_PATH = ../objs/src
 
 SRCS = context.c				\
@@ -30,8 +31,10 @@ OBJS = $(BUILD_PATH)/context.o					\
 			 $(BUILD_PATH)/tcp.o				\
 			 $(BUILD_PATH)/utils.o
 
+$(BUILD_PATH):
+	$(MAKEDIR) $(BUILD_PATH)
 
-$(BUILD_PATH)/%.o: %.c config.h
+$(BUILD_PATH)/%.o: %.c
 	$(CC) $< $(CFLAGS) -c -o $@
 
 $(BUILD_PATH)/%.o: swap_context.s
@@ -39,3 +42,4 @@ $(BUILD_PATH)/%.o: swap_context.s
 
 $(BUILD_PATH)/libcoroutine.a: $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
+
