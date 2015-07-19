@@ -1,12 +1,21 @@
 coroutine
 ========================================
-Coroutine is a cooperative multitasking based network library in pure C.
+Cooperative multitasking based network library in pure C.
+
+
+Details
+----------------------------------------
+Coroutine is a combination of goroutine of golang and actor of erlang.
+
+Each coroutine is actually a user thread which will be schedule away when come across I/O.
 
 This library mainly focus on network programming. It has the same performance compared to event-driven model with *more graceful code organization*.
+
 
 Status
 ----------------------------------------
 The project is under development. Any issue or pull request is welcomed.
+
 
 How to Use?
 ----------------------------------------
