@@ -8,10 +8,15 @@ SAMPLE_OBJS_PATH=../objs/sample
 
 .PHONY: all
 
-all: $(SAMPLE_OBJS_PATH)/echosvr
+all: $(SAMPLE_OBJS_PATH)				\
+	 $(SAMPLE_OBJS_PATH)/echosvr		\
+	 $(SAMPLE_OBJS_PATH)/simplehttpsvr
 
 $(SAMPLE_OBJS_PATH):
 	$(MAKEDIR) $(SAMPLE_OBJS_PATH)
 
 $(SAMPLE_OBJS_PATH)/echosvr: echosvr.c ../objs/src/libcoroutine.a
+	$(CC) $(CFLAGS) $< -o $@ $(LIBCOROUTINE)
+
+$(SAMPLE_OBJS_PATH)/simplehttpsvr: simplehttpsvr.c ../objs/src/libcoroutine.a
 	$(CC) $(CFLAGS) $< -o $@ $(LIBCOROUTINE)

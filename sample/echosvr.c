@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include "coroutine.h"
@@ -12,7 +13,7 @@ echo(void *arg)
     size_t size;
     char buf[1024];
 
-    fd = (int)arg;
+    fd = (int)(uint64_t)arg;
     while ((size = co_tcp_read(fd, buf, 1023)) > 0) {
         co_tcp_write(fd, buf, size);
     }
@@ -25,7 +26,6 @@ int
 main(int argc, char *argv[])
 {
     int listenfd, connfd;
-    crt_ctx_t *ctx;
 
     if (argc != 2) {
         printf("%s usage: echosvr <port>\n", argv[0]);
@@ -46,8 +46,10 @@ main(int argc, char *argv[])
 
     for (;;) {
         connfd = co_tcp_accept(listenfd, NULL, NULL);
-        ctx = crt_create(NULL, echo, (void*)(int64_t)connfd);
-        (void) ctx;
+        if (crt_create(NULL, echo, (void*)(int64_t)connfd) != NULL) {
+            printf("create coroutine fail\n");
+            exit(-1);
+        }
     }
 
     return 0;

@@ -12,7 +12,6 @@
 #include "list.h"
 #include "utils.h"
 #include "sched.h"
-#include "config.h"
 #include "context.h"
 
 
@@ -100,10 +99,9 @@ crt_sched()
 
     ctx = crt_sched_find_ready();
 
-    CRT_LOG_LIST();
-    CRT_LOG_READY_LIST();
-
 #ifdef __DEBUG__
+    CRT_LOG_LIST;
+    CRT_LOG_READY_LIST;
     printf("sched crt cid: %" PRIu64 "\n", ctx->cid);
 #endif
 

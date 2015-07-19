@@ -2,14 +2,14 @@
 
 all: libco sample
 
-libco: $(SRC_OUT_DIR)
-	$(MAKE) -f src/Makefile
+libco:
+	@(cd src && make)
 
 #test: libco $(TEST_OUT_DIR)
 #	(cd t && make)
 
-sample: libco $(SAMPLE_OUT_DIR)
-	$(MAKE) -f src/sample
+sample: libco
+	@(cd sample && make)
 
 clean:
 	@rm -rf objs/

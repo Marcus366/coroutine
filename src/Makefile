@@ -31,15 +31,16 @@ OBJS = $(BUILD_PATH)/context.o					\
 			 $(BUILD_PATH)/tcp.o				\
 			 $(BUILD_PATH)/utils.o
 
+$(BUILD_PATH)/%.o: %.c $(BUILD_PATH)
+	$(CC) $< $(CFLAGS) -c -o $@
+
+$(BUILD_PATH)/%.o: swap_context.s $(BUILD_PATH)
+	$(CC) $< $(CFLAGS) -c -o $@
+
+$(BUILD_PATH)/libcoroutine.a: $(OBJS) $(BUILD_PATH)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+
 $(BUILD_PATH):
 	$(MAKEDIR) $(BUILD_PATH)
 
-$(BUILD_PATH)/%.o: %.c
-	$(CC) $< $(CFLAGS) -c -o $@
-
-$(BUILD_PATH)/%.o: swap_context.s
-	$(CC) $< $(CFLAGS) -c -o $@
-
-$(BUILD_PATH)/libcoroutine.a: $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
 

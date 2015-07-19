@@ -4,9 +4,9 @@
 #include <inttypes.h>
 #include <sys/mman.h>
 
+#include "log.h"
 #include "list.h"
 #include "sched.h"
-#include "config.h"
 #include "context.h"
 #include "coroutine.h"
 
