@@ -1,4 +1,6 @@
 #include "test.h"
+#include "coroutine.h"
+#include <stddef.h>
 
 
 void func(void *arg) {
@@ -7,7 +9,7 @@ void func(void *arg) {
 }
 
 
-TEST_IMPL(crt_create) {
+TEST(coroutine_create) {
   crt_ctx_t *ctx;
 
   crt_init();

@@ -5,8 +5,8 @@ all: libco sample
 libco:
 	@(cd src && make)
 
-#test: libco $(TEST_OUT_DIR)
-#	(cd t && make)
+test: libco
+	@(cd t && make)
 
 sample: libco
 	@(cd sample && make)
